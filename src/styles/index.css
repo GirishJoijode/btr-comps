@@ -1,0 +1,709 @@
+:root {
+  --navy: #25273a;
+  --navy-700: #2f3350;
+  --navy-600: #3b3f5c;
+  --navy-900: #1c1e2c;
+  --yellow: #ffdf00;
+  --yellow-soft: #fff4b8;
+  --ink: #20222e;
+  --muted: #6b7280;
+  --muted-soft: #9aa1ad;
+  --line: #e6e8ef;
+  --line-soft: #eef0f5;
+  --bg: #f4f5f8;
+  --card: #ffffff;
+  --radius: 12px;
+  --shadow: 0 1px 2px rgba(20, 22, 35, 0.05), 0 6px 18px rgba(20, 22, 35, 0.06);
+  --font: 'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+  --select-col: 44px; /* fixed checkbox column width */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font);
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.45;
+  overflow: hidden;
+}
+
+/* Fixed full-viewport application shell */
+.app {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ---- Header (fixed) ---- */
+.app-header {
+  flex: none;
+  background: var(--navy);
+  color: #fff;
+  border-bottom: 3px solid var(--yellow);
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.7rem 1.5rem;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex: none;
+}
+.brand__mark {
+  width: 12px;
+  height: 34px;
+  border-radius: 3px;
+  background: var(--yellow);
+  flex: none;
+}
+.app-header h1 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  line-height: 1.2;
+}
+.app-header__subtitle {
+  margin: 0.1rem 0 0;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.78rem;
+}
+.app-header__status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.75);
+  white-space: nowrap;
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--yellow);
+  box-shadow: 0 0 0 3px rgba(255, 223, 0, 0.2);
+}
+
+/* ---- Tabs ---- */
+.tabs {
+  display: flex;
+  gap: 0.3rem;
+  padding: 0.25rem;
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 9px;
+}
+.tab {
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.72);
+  background: none;
+  border: none;
+  border-radius: 7px;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.tab:hover:not(:disabled):not(.is-active) {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+.tab.is-active {
+  background: var(--yellow);
+  color: var(--navy);
+}
+.tab:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ---- Main content area (fills remaining height) ---- */
+.app-main {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 1.1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.tab-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+/* ---- Reusable panel ---- */
+.panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+.panel__head {
+  flex: none;
+  padding: 0.85rem 1rem 0.6rem;
+  border-bottom: 1px solid var(--line-soft);
+}
+.panel__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--navy);
+  position: relative;
+  padding-left: 0.7rem;
+}
+.panel__title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 2px;
+  bottom: 2px;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--yellow);
+}
+.panel__subtitle {
+  display: block;
+  margin-top: 0.25rem;
+  margin-left: 0.7rem;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+.panel__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+/* ---- Dashboard panel sizing ---- */
+.dashboard-panel > .summary-grid,
+.dashboard-panel > .filters {
+  flex: none;
+}
+.dashboard-panel > .table-wrap,
+.dashboard-panel > .table-empty {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ---- Summary cards ---- */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.1rem;
+}
+.summary-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  position: relative;
+  overflow: hidden;
+}
+.summary-card::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--yellow);
+}
+.summary-card__value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1.1;
+}
+.summary-card__label {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+}
+
+/* ---- Filters ---- */
+.filters {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.filters__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+  gap: 0.85rem;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+}
+.field__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.field__input {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  width: 100%;
+}
+.field__input:hover {
+  border-color: var(--muted-soft);
+}
+.field__input:focus {
+  outline: none;
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px rgba(37, 39, 58, 0.12);
+}
+.filters__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  border-top: 1px solid var(--line-soft);
+  padding-top: 0.9rem;
+}
+.filters__status {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.filters__count {
+  font-size: 0.85rem;
+  color: var(--ink);
+  font-weight: 600;
+}
+.filters__selected {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--navy);
+  background: var(--yellow);
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+}
+.filters__buttons {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+/* ---- Buttons ---- */
+.btn {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  min-height: 40px; /* comfortable tap target */
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.btn--primary {
+  background: var(--navy);
+  color: #fff;
+}
+.btn--primary:not(:disabled):hover {
+  background: var(--navy-900);
+  box-shadow: 0 0 0 2px var(--yellow);
+}
+.btn__hint {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--navy);
+  background: var(--yellow);
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+}
+.btn--ghost {
+  background: #fff;
+  border-color: var(--line);
+  color: var(--ink);
+}
+.btn--ghost:not(:disabled):hover {
+  border-color: var(--navy);
+  color: var(--navy);
+}
+
+/* ---- Analysis tab (fixed 2-row dashboard grid) ---- */
+.analysis-panel {
+  overflow: hidden;
+}
+.analysis-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: 1.35fr 1fr;
+  gap: 1.1rem;
+}
+.analysis-grid .col-span-3 {
+  grid-column: span 3;
+}
+.analysis-grid .col-span-2 {
+  grid-column: span 2;
+}
+.chart-card .panel__body {
+  padding: 0.5rem 0.8rem 0.7rem;
+}
+
+/* ---- Chart bits ---- */
+.chart-scroll {
+  width: 100%;
+}
+.chart-empty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+/* ---- Table ---- */
+.table-wrap {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: auto;
+}
+.data-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+.data-table th,
+.data-table td {
+  vertical-align: middle;
+}
+.data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--navy);
+  color: #fff;
+  text-align: left;
+  font-weight: 600;
+  padding: 0;
+  border-bottom: 2px solid var(--yellow);
+}
+.th-button {
+  width: 100%;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.6rem 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  text-align: left;
+}
+.th-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.th-arrow {
+  font-size: 0.6rem;
+  color: var(--yellow);
+}
+.data-table th.is-right .th-button {
+  justify-content: flex-end;
+}
+.data-table td {
+  padding: 0.5rem 0.8rem;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--ink);
+}
+.data-table tbody tr:nth-child(even) {
+  background: #fafbfc;
+}
+.data-table tbody tr:hover {
+  background: #f0f1f7;
+}
+.data-table tbody tr.is-selected {
+  background: var(--yellow-soft);
+}
+.data-table tbody tr.is-selected:hover {
+  background: #ffed8a;
+}
+.is-right {
+  text-align: right;
+}
+/* The wide Comments column absorbs leftover horizontal space so the narrow
+   columns (especially the checkbox) never get inflated by table-layout. */
+.is-wide {
+  white-space: normal;
+  min-width: 240px;
+  width: 100%;
+}
+
+/* ---- Checkbox column (professional data-grid alignment) ---- */
+.col-select {
+  width: var(--select-col);
+  min-width: var(--select-col);
+  max-width: var(--select-col);
+  padding: 0 !important;
+  text-align: center;
+}
+/* Flex wrapper centres the checkbox both axes, in header AND body rows, so
+   every checkbox shares the same vertical axis with no baseline drift. */
+.checkbox-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 2.1rem;
+}
+.data-table input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--navy);
+  cursor: pointer;
+}
+
+/* Sticky checkbox column (left:0) + sticky scheme column flush after it */
+.data-table th.is-sticky-check {
+  left: 0;
+  z-index: 4;
+}
+.data-table td.is-sticky-check {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: #fff;
+}
+.data-table th.is-sticky {
+  left: var(--select-col);
+  z-index: 3;
+}
+.data-table td.is-sticky {
+  position: sticky;
+  left: var(--select-col);
+  background: #fff;
+  font-weight: 600;
+  z-index: 1;
+}
+.data-table tbody tr:nth-child(even) td.is-sticky,
+.data-table tbody tr:nth-child(even) td.is-sticky-check {
+  background: #fafbfc;
+}
+.data-table tbody tr:hover td.is-sticky,
+.data-table tbody tr:hover td.is-sticky-check {
+  background: #f0f1f7;
+}
+.data-table tbody tr.is-selected td.is-sticky,
+.data-table tbody tr.is-selected td.is-sticky-check {
+  background: var(--yellow-soft);
+}
+
+.table-empty {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 2.5rem;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* ---- States ---- */
+.state {
+  margin: auto;
+  width: 100%;
+  max-width: 520px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 3rem 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+.state--error h2 {
+  margin: 0;
+  color: #b3261e;
+}
+.state__hint {
+  font-size: 0.85rem;
+  color: var(--muted);
+  max-width: 440px;
+}
+.spinner {
+  width: 38px;
+  height: 38px;
+  border: 4px solid var(--line);
+  border-top-color: var(--navy);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===========================================================================
+   RESPONSIVE
+   =========================================================================== */
+
+/* Laptop / small desktop: stack the analysis grid and scroll inside the tab */
+@media (max-width: 1024px) {
+  .analysis-panel {
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .analysis-grid {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .analysis-grid .chart-card {
+    min-height: 320px;
+  }
+}
+
+@media (max-width: 860px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Tablet / phone: relax the fixed viewport and allow natural page scrolling */
+@media (max-width: 760px) {
+  body {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  .app {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+  .app-header {
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+  }
+  .app-header__status {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+  }
+  .tabs {
+    order: 2;
+    flex: 1;
+  }
+  .tab {
+    flex: 1;
+    text-align: center;
+  }
+  .app-main {
+    overflow: visible;
+    padding: 1rem;
+  }
+  .tab-panel {
+    overflow: visible;
+  }
+  .dashboard-panel > .table-wrap {
+    flex: none;
+    min-height: 60vh;
+  }
+  .analysis-panel {
+    overflow: visible;
+  }
+}
+
+@media (max-width: 600px) {
+  .app-header {
+    gap: 0.6rem;
+  }
+  .app-header h1 {
+    font-size: 1.05rem;
+  }
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  .summary-card {
+    padding: 0.9rem 1rem;
+  }
+  .summary-card__value {
+    font-size: 1.4rem;
+  }
+  .filters__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filters__buttons {
+    justify-content: stretch;
+  }
+  .filters__buttons .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
