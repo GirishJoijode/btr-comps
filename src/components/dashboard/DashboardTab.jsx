@@ -19,6 +19,7 @@ export default function DashboardTab({
   onClearSelection,
   onToggleRow,
   onToggleAll,
+  onRowClick,
 }) {
   const summary = useMemo(() => buildSummary(records), [records])
 
@@ -43,6 +44,7 @@ export default function DashboardTab({
         selectedIds={selectedIds}
         onToggleRow={onToggleRow}
         onToggleAll={onToggleAll}
+        onRowClick={onRowClick}
       />
     </div>
   )

@@ -24,6 +24,7 @@ src/
     dateUtils.js                 #   Quarter parsing + latest-quarter + latest-modified
     analysis.js                  #   Summary KPIs + chart aggregations
     exportXlsx.js                #   XLSX builder/downloader (SheetJS)
+    location.js                  #   Coordinate detection + Google/OSM map links (no API keys)
   components/
     common/
       States.jsx                 #   Loading + error views
@@ -34,7 +35,10 @@ src/
     filters/
       FilterPanel.jsx            #   Dropdown filters, search, action buttons
     table/
-      RentalCompsTable.jsx       #   Sortable, selectable comps table
+      RentalCompsTable.jsx       #   Sortable, selectable comps table (row click opens detail modal)
+    detail/
+      SchemeDetailModal.jsx      #   Full scheme detail pop-up (opened from a row click)
+      SchemeMapPanel.jsx         #   Map embed (if coords) or location-search fallback
     analysis/
       AnalysisTab.jsx            #   Chart grid (recharts)
       ChartCard.jsx              #   Reusable chart card shell
@@ -55,6 +59,8 @@ docs/
 | **Which filters appear**           | `src/config/filterConfig.js`           |
 | **Search fields**                  | `src/config/filterConfig.js`           |
 | **Table columns / order / format** | `src/config/tableColumns.js`           |
+| **Scheme detail modal content/layout** | `src/components/detail/SchemeDetailModal.jsx` |
+| **Map / location logic (coords + links)** | `src/components/detail/SchemeMapPanel.jsx`, `src/utils/location.js` |
 | **Chart colours / theme tokens**   | `src/config/theme.js`                  |
 | **Which charts appear**            | `src/components/analysis/AnalysisTab.jsx` |
 | **Chart calculations**             | `src/utils/analysis.js`                |

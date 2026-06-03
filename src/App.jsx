@@ -3,6 +3,7 @@ import AnalysisTab from './components/analysis/AnalysisTab'
 import { ErrorMessage, Loading } from './components/common/States'
 import Tabs from './components/common/Tabs'
 import DashboardTab from './components/dashboard/DashboardTab'
+import SchemeDetailModal from './components/detail/SchemeDetailModal'
 import { useRentalComps } from './hooks/useRentalComps'
 import {
   applyFilters,
@@ -24,6 +25,7 @@ export default function App() {
   const [search, setSearch] = useState('')
   const [selectedIds, setSelectedIds] = useState(() => new Set())
   const [tab, setTab] = useState('dashboard')
+  const [activeRecord, setActiveRecord] = useState(null)
 
   const options = useMemo(() => buildFilterOptions(records), [records])
   const filtered = useMemo(
@@ -112,11 +114,16 @@ export default function App() {
             onClearSelection={clearSelection}
             onToggleRow={toggleRow}
             onToggleAll={toggleAll}
+            onRowClick={setActiveRecord}
           />
         )}
 
         {status === 'ready' && tab === 'analysis' && <AnalysisTab records={filtered} />}
       </main>
+
+      {activeRecord && (
+        <SchemeDetailModal record={activeRecord} onClose={() => setActiveRecord(null)} />
+      )}
     </div>
   )
 }

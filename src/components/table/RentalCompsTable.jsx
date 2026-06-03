@@ -69,6 +69,7 @@ export default function RentalCompsTable({
   selectedIds,
   onToggleRow,
   onToggleAll,
+  onRowClick,
 }) {
   const [sort, setSort] = useState({ key: null, dir: 'asc' })
 
@@ -135,8 +136,30 @@ export default function RentalCompsTable({
         <tbody>
           {sorted.map((rec, i) => {
             const selected = selectedIds.has(rec.Id)
+            // Open the detail modal on row click, but never when the click
+            // originated inside the checkbox column.
+            const handleRowClick = (e) => {
+              if (!onRowClick) return
+              if (e.target.closest('.col-select')) return
+              onRowClick(rec)
+            }
+            const handleRowKeyDown = (e) => {
+              if (!onRowClick) return
+              if (e.target.closest('.col-select')) return
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onRowClick(rec)
+              }
+            }
             return (
-              <tr key={rec.Id ?? i} className={selected ? 'is-selected' : ''}>
+              <tr
+                key={rec.Id ?? i}
+                className={`is-clickable${selected ? ' is-selected' : ''}`}
+                onClick={handleRowClick}
+                onKeyDown={handleRowKeyDown}
+                tabIndex={0}
+                aria-label={`View details for ${rec.Scheme ?? 'scheme'}`}
+              >
                 <td className="col-select is-sticky-check">
                   <Checkbox
                     checked={selected}
