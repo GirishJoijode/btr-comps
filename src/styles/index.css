@@ -380,17 +380,76 @@ body {
   color: var(--navy);
 }
 
-/* ---- Analysis tab (fixed 2-row dashboard grid) ---- */
+/* ---- Analysis tab (fixed dashboard grid) ---- */
 .analysis-panel {
   overflow: hidden;
+}
+.analysis-toolbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+}
+.analysis-toolbar__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.analysis-basis {
+  margin-left: auto;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.32rem 0.8rem;
+}
+.analysis-basis--selected {
+  color: var(--navy);
+  background: var(--yellow);
+  border-color: var(--yellow);
 }
 .analysis-grid {
   flex: 1;
   min-height: 0;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  grid-template-rows: 1.35fr 1fr;
+  grid-template-rows: 1fr 1fr;
   gap: 1.1rem;
+}
+
+/* ---- Segmented control (unit-type toggle) ---- */
+.segmented {
+  display: inline-flex;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 0.2rem;
+  gap: 0.2rem;
+}
+.segmented__btn {
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.segmented__btn:hover:not(.is-active) {
+  color: var(--navy);
+  background: var(--bg);
+}
+.segmented__btn.is-active {
+  background: var(--navy);
+  color: #fff;
 }
 .analysis-grid .col-span-3 {
   grid-column: span 3;
@@ -726,6 +785,51 @@ body {
   transition: background 0.15s, color 0.15s;
 }
 .modal__close:hover {
+  background: var(--yellow);
+  color: var(--navy);
+}
+
+/* ---- Period switcher (Scheme + Date_Filter) ---- */
+.period-switch {
+  flex: none;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.65rem 1.4rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.period-switch__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-right: 0.3rem;
+}
+.period-chip {
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--navy);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.3rem 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.period-chip:hover:not(.is-active) {
+  border-color: var(--navy);
+}
+.period-chip.is-active {
+  background: var(--navy);
+  color: #fff;
+  border-color: var(--navy);
+  cursor: default;
+}
+.period-switch--single .period-chip.is-active {
   background: var(--yellow);
   color: var(--navy);
 }

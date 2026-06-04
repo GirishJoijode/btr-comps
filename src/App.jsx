@@ -7,10 +7,11 @@ import SchemeDetailModal from './components/detail/SchemeDetailModal'
 import { useRentalComps } from './hooks/useRentalComps'
 import {
   applyFilters,
-  buildFilterOptions,
+  buildCascadingOptions,
   EMPTY_FILTERS,
   sanitizeFilters,
 } from './utils/filters'
+import { latestPerScheme } from './utils/dateUtils'
 import { exportToXlsx } from './utils/exportXlsx'
 
 const TABS = [
@@ -27,11 +28,36 @@ export default function App() {
   const [tab, setTab] = useState('dashboard')
   const [activeRecord, setActiveRecord] = useState(null)
 
-  const options = useMemo(() => buildFilterOptions(records), [records])
+  // Power BI–style cascading options: recomputed from the other active filters.
+  const options = useMemo(
+    () => buildCascadingOptions(records, filters, search),
+    [records, filters, search]
+  )
   const filtered = useMemo(
     () => applyFilters(records, filters, search),
     [records, filters, search]
   )
+
+  const isFiltering =
+    search.trim() !== '' || Object.values(filters).some((v) => v !== '')
+
+  // Dataset that drives the Analysis tab, in priority order:
+  //   1. Selected rows (selection overrides filters)
+  //   2. Filtered/search results
+  //   3. The full dataset
+  const analysisRecords = useMemo(
+    () =>
+      selectedIds.size > 0 ? records.filter((r) => selectedIds.has(r.Id)) : filtered,
+    [records, filtered, selectedIds]
+  )
+  const analysisBasis =
+    selectedIds.size > 0
+      ? `Analysis based on ${analysisRecords.length.toLocaleString('en-GB')} selected record${
+          analysisRecords.length === 1 ? '' : 's'
+        }`
+      : isFiltering
+      ? 'Analysis based on filtered records'
+      : 'Analysis based on all records'
 
   const handleFilterChange = (key, value) =>
     setFilters((prev) => sanitizeFilters({ ...prev, [key]: value }))
@@ -60,12 +86,15 @@ export default function App() {
   const selectAllFiltered = () => setSelectedIds(new Set(filtered.map((r) => r.Id)))
   const clearSelection = () => setSelectedIds(new Set())
 
-  // Export ticked rows if any, otherwise the full filtered set.
+  // Export rules:
+  //  - If rows are ticked, export EXACTLY those rows (respect the selection).
+  //  - If nothing is ticked, export the filtered set deduplicated by Scheme,
+  //    keeping each scheme's most recent Date_Filter entry (see latestPerScheme).
   const handleExport = () => {
     const rows =
       selectedIds.size > 0
         ? filtered.filter((r) => selectedIds.has(r.Id))
-        : filtered
+        : latestPerScheme(filtered)
     exportToXlsx(rows)
   }
 
@@ -118,11 +147,18 @@ export default function App() {
           />
         )}
 
-        {status === 'ready' && tab === 'analysis' && <AnalysisTab records={filtered} />}
+        {status === 'ready' && tab === 'analysis' && (
+          <AnalysisTab records={analysisRecords} basisLabel={analysisBasis} />
+        )}
       </main>
 
       {activeRecord && (
-        <SchemeDetailModal record={activeRecord} onClose={() => setActiveRecord(null)} />
+        <SchemeDetailModal
+          key={activeRecord.Id ?? `${activeRecord.Scheme}-${activeRecord.Date_Filter}`}
+          record={activeRecord}
+          allRecords={records}
+          onClose={() => setActiveRecord(null)}
+        />
       )}
     </div>
   )

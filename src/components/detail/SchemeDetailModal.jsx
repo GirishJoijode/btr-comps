@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { schemeDateEntries } from '../../utils/dateUtils'
 import {
   formatDate,
   formatNumber,
@@ -94,7 +95,21 @@ function InfoRow({ label, value }) {
   )
 }
 
-export default function SchemeDetailModal({ record, onClose }) {
+export default function SchemeDetailModal({ record, allRecords, onClose }) {
+  // A scheme can have multiple Date_Filter entries (Scheme + Date_Filter is the
+  // effective unique key). Consolidate them into one modal and let the user
+  // switch period via a segmented toggle; the rest of the modal reflects the
+  // currently-selected period.
+  const siblings = useMemo(
+    () => schemeDateEntries(allRecords || [record], record),
+    [allRecords, record]
+  )
+  const [activeDate, setActiveDate] = useState(() => record?.Date_Filter ?? '')
+  const active = useMemo(
+    () => siblings.find((s) => s.Date_Filter === activeDate) || record,
+    [siblings, activeDate, record]
+  )
+
   // Close on Escape and lock background scroll while open.
   useEffect(() => {
     function onKeyDown(e) {
@@ -112,11 +127,11 @@ export default function SchemeDetailModal({ record, onClose }) {
   if (!record) return null
 
   const sizeText = (key) =>
-    isBlank(record[key]) ? DASH : `${formatNumber(Math.round(record[key]))} sq ft`
+    isBlank(active[key]) ? DASH : `${formatNumber(Math.round(active[key]))} sq ft`
 
-  const additional = Object.keys(record).filter((key) => !SHOWN_KEYS.has(key))
-
-  const verified = record.Source_Verified === true
+  const additional = Object.keys(active).filter((key) => !SHOWN_KEYS.has(key))
+  const verified = active.Source_Verified === true
+  const hasMultiplePeriods = siblings.length > 1
 
   return (
     <div className="modal-overlay" onMouseDown={onClose}>
@@ -131,13 +146,11 @@ export default function SchemeDetailModal({ record, onClose }) {
           <div className="modal__heading">
             <h2 className="modal__title">{record.Scheme || 'Unnamed scheme'}</h2>
             <p className="modal__sub">
-              {[record.Town, record.Regional_Filter, record.Date_Filter]
-                .filter(Boolean)
-                .join('  ·  ') || '—'}
+              {[active.Town, active.Regional_Filter].filter(Boolean).join('  ·  ') || '—'}
             </p>
             <div className="modal__badges">
-              {!isBlank(record.Source) && (
-                <span className="badge badge--soft">{record.Source}</span>
+              {!isBlank(active.Source) && (
+                <span className="badge badge--soft">{active.Source}</span>
               )}
               <span className={`badge ${verified ? 'badge--verified' : 'badge--muted'}`}>
                 {verified ? 'Verified' : 'Unverified'}
@@ -159,16 +172,44 @@ export default function SchemeDetailModal({ record, onClose }) {
           </button>
         </header>
 
+        {/* Period switcher (Scheme + Date_Filter). Toggle shows when >1 period. */}
+        {hasMultiplePeriods ? (
+          <div className="period-switch" role="tablist" aria-label="Reporting period">
+            <span className="period-switch__label">Period</span>
+            {siblings.map((s) => (
+              <button
+                key={s.Date_Filter || s.Id}
+                type="button"
+                role="tab"
+                aria-selected={s.Date_Filter === active.Date_Filter}
+                className={`period-chip${
+                  s.Date_Filter === active.Date_Filter ? ' is-active' : ''
+                }`}
+                onClick={() => setActiveDate(s.Date_Filter)}
+              >
+                {s.Date_Filter || '—'}
+              </button>
+            ))}
+          </div>
+        ) : (
+          !isBlank(active.Date_Filter) && (
+            <div className="period-switch period-switch--single">
+              <span className="period-switch__label">Period</span>
+              <span className="period-chip is-active">{active.Date_Filter}</span>
+            </div>
+          )
+        )}
+
         <div className="modal__body">
           <section className="modal__section">
             <h3 className="modal__section-title">Key metrics</h3>
             <div className="metric-grid">
-              <Metric label="Units" value={dash(formatNumber(record.Units))} />
-              <Metric label="Occupancy" value={dash(formatPercent(record.Occupancy))} />
-              <Metric label="Stabilised" value={yesNo(record.Stabilised)} />
-              <Metric label="Amenity grade" value={dash(record.Amenity_Grade)} />
-              <Metric label="Launched" value={dash(record.Launched)} />
-              <Metric label="Operator" value={dash(record.Operator)} />
+              <Metric label="Units" value={dash(formatNumber(active.Units))} />
+              <Metric label="Occupancy" value={dash(formatPercent(active.Occupancy))} />
+              <Metric label="Stabilised" value={yesNo(active.Stabilised)} />
+              <Metric label="Amenity grade" value={dash(active.Amenity_Grade)} />
+              <Metric label="Launched" value={dash(active.Launched)} />
+              <Metric label="Operator" value={dash(active.Operator)} />
             </div>
           </section>
 
@@ -188,9 +229,9 @@ export default function SchemeDetailModal({ record, onClose }) {
                   {UNIT_ROWS.map((row) => (
                     <tr key={row.label}>
                       <th scope="row">{row.label}</th>
-                      <td>{dash(formatRent(record[row.rent]))}</td>
+                      <td>{dash(formatRent(active[row.rent]))}</td>
                       <td>{sizeText(row.size)}</td>
-                      <td>{dash(formatPsf(record[row.psf]))}</td>
+                      <td>{dash(formatPsf(active[row.psf]))}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -200,21 +241,21 @@ export default function SchemeDetailModal({ record, onClose }) {
 
           <section className="modal__section">
             <h3 className="modal__section-title">Location</h3>
-            <SchemeMapPanel record={record} />
+            <SchemeMapPanel record={active} />
           </section>
 
           <section className="modal__section">
             <h3 className="modal__section-title">Scheme information</h3>
             <div className="info-grid">
-              <InfoRow label="Amenities" value={dash(record.Amenities)} />
-              <InfoRow label="Furnished" value={yesNo(record.Furnished)} />
-              <InfoRow label="Height" value={dash(formatNumber(record.Height))} />
-              <InfoRow label="Comparables from" value={dash(record.Comparables_From)} />
-              <InfoRow label="Deals" value={dash(record.Deals)} />
-              <InfoRow label="Comments" value={dash(record.Comments)} />
-              <InfoRow label="Last updated by" value={dash(record.Last_Updated_By)} />
-              <InfoRow label="Last updated at" value={dash(record.Last_Updated_At)} />
-              <InfoRow label="Last modified" value={dash(formatDate(record['Last modified']))} />
+              <InfoRow label="Amenities" value={dash(active.Amenities)} />
+              <InfoRow label="Furnished" value={yesNo(active.Furnished)} />
+              <InfoRow label="Height" value={dash(formatNumber(active.Height))} />
+              <InfoRow label="Comparables from" value={dash(active.Comparables_From)} />
+              <InfoRow label="Deals" value={dash(active.Deals)} />
+              <InfoRow label="Comments" value={dash(active.Comments)} />
+              <InfoRow label="Last updated by" value={dash(active.Last_Updated_By)} />
+              <InfoRow label="Last updated at" value={dash(active.Last_Updated_At)} />
+              <InfoRow label="Last modified" value={dash(formatDate(active['Last modified']))} />
             </div>
           </section>
 
@@ -223,7 +264,7 @@ export default function SchemeDetailModal({ record, onClose }) {
               <h3 className="modal__section-title">Additional fields</h3>
               <div className="info-grid">
                 {additional.map((key) => (
-                  <InfoRow key={key} label={key} value={genericValue(record[key])} />
+                  <InfoRow key={key} label={key} value={genericValue(active[key])} />
                 ))}
               </div>
             </section>

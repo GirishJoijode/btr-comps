@@ -6,6 +6,7 @@ import {
   isFilterVisible,
   SEARCH_FIELDS,
 } from '../config/filterConfig'
+import { compareDateFilterDesc } from './dateUtils'
 import { isBlank } from './formatters'
 
 // Convert a raw value into a stable string for use as a filter option/value.
@@ -32,7 +33,15 @@ export function sanitizeFilters(filters) {
   return out
 }
 
-// Build the sorted list of unique options for each filter field.
+// Sort a field's option list. Date_Filter is sorted latest-first; everything
+// else alphabetically (numeric-aware).
+function sortOptions(key, values) {
+  if (key === 'Date_Filter') return values.sort(compareDateFilterDesc)
+  return values.sort((a, b) => a.localeCompare(b, 'en', { numeric: true }))
+}
+
+// Build the sorted list of unique options for each filter field (from the full
+// dataset — no cross-filtering).
 export function buildFilterOptions(records) {
   const options = {}
   for (const { key } of FILTER_FIELDS) {
@@ -41,9 +50,28 @@ export function buildFilterOptions(records) {
       const opt = asOption(rec[key])
       if (opt !== '') set.add(opt)
     }
-    options[key] = Array.from(set).sort((a, b) =>
-      a.localeCompare(b, 'en', { numeric: true })
-    )
+    options[key] = sortOptions(key, Array.from(set))
+  }
+  return options
+}
+
+// Power BI–style cascading options: each filter's available values are computed
+// from the dataset filtered by every OTHER active filter + the search term, but
+// NOT by the filter itself (so its own selection never hides its siblings). The
+// currently-selected value is always kept in its own list so the dropdown can
+// never go blank if it becomes invalid after another filter changes.
+export function buildCascadingOptions(records, filters, search) {
+  const options = {}
+  for (const { key } of FILTER_FIELDS) {
+    const others = { ...filters, [key]: '' }
+    const subset = applyFilters(records, others, search)
+    const set = new Set()
+    for (const rec of subset) {
+      const opt = asOption(rec[key])
+      if (opt !== '') set.add(opt)
+    }
+    if (filters[key]) set.add(filters[key])
+    options[key] = sortOptions(key, Array.from(set))
   }
   return options
 }
