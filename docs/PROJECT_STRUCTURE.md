@@ -81,13 +81,18 @@ once per reporting period (e.g. `ABC / Q2 2025` and `ABC / Q3 2025`).
 - **Latest period** is determined by `dateFilterRank()` in `utils/dateUtils.js`,
   which understands `Q1–Q4 {year}` (Q4 > Q3 > Q2 > Q1 within a year), bare years,
   `H1/H2`, and `dd/mm/yyyy` / ISO dates. Unknown values sort last and never crash.
-- **Detail modal period toggle**: when a clicked scheme has more than one
-  Date_Filter entry, the modal shows a segmented period switcher (latest first,
-  via `schemeDateEntries()`); selecting a period updates the whole modal.
-- **Export dedup**: `exportToXlsx` is given rows by `App.handleExport`:
-  - If the user has ticked rows → export exactly those rows.
-  - If nothing is ticked → export the filtered set passed through
-    `latestPerScheme()` (one row per scheme, its most recent Date_Filter).
+- **Grouped table (one row per scheme)**: `App.rows = latestPerScheme(filtered)`
+  collapses each scheme to its latest Date_Filter entry *within the filtered set*
+  (group-after-filter). Older periods only appear in the detail modal.
+- **Detail modal period toggle**: the modal is given the full `records`, so when
+  a scheme has more than one Date_Filter entry it shows a segmented period
+  switcher (latest first, via `schemeDateEntries()`); selecting a period updates
+  the whole modal. The clicked grouped row sets the initial period.
+- **Export**: `App.handleExport`:
+  - If rows are ticked → export exactly those (latest) rows.
+  - If nothing is ticked → export every grouped row (latest period per scheme).
+- **Summary cards** still count the full filtered set: "Total records" = all
+  filtered entries, "Unique schemes" = the grouped row count.
 
 ## Cascading filters (Power BI slicers)
 
@@ -100,15 +105,20 @@ this on `[records, filters, search]`.
 ## What dataset drives the Analysis tab
 
 `App.jsx` derives `analysisRecords` in priority order and passes it to
-`AnalysisTab` (the charts themselves are unchanged):
+`AnalysisTab`:
 
 1. **Selected rows** — if any table rows are ticked, analysis uses *only* those
    rows (`records.filter(r => selectedIds.has(r.Id))`); selection overrides filters.
-2. **Filtered/search results** — otherwise the filtered set.
+2. **Filtered/search results** — otherwise the filtered set (all entries).
 3. **Full dataset** — when nothing is selected and no filters/search are active.
 
 A small indicator above the charts (`analysis-basis`) shows which of the three
 is currently driving the analysis.
+
+**Hybrid per-chart source** (inside `AnalysisTab`): the rent / £psf / occupancy
+charts run on `latestPerScheme(records)` so a scheme reported across several
+periods isn't double-counted, while **Records by date** uses all entries so the
+per-period bars stay meaningful.
 
 ## Map / location
 

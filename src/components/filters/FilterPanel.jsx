@@ -51,7 +51,7 @@ export default function FilterPanel({
       <div className="filters__actions">
         <div className="filters__status">
           <span className="filters__count">
-            {resultCount.toLocaleString('en-GB')} record
+            {resultCount.toLocaleString('en-GB')} scheme
             {resultCount === 1 ? '' : 's'}
           </span>
           {selectedCount > 0 && (

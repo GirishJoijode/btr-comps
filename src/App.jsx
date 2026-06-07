@@ -12,6 +12,7 @@ import {
   sanitizeFilters,
 } from './utils/filters'
 import { latestPerScheme } from './utils/dateUtils'
+import { buildSummary } from './utils/analysis'
 import { exportToXlsx } from './utils/exportXlsx'
 
 const TABS = [
@@ -37,6 +38,14 @@ export default function App() {
     () => applyFilters(records, filters, search),
     [records, filters, search]
   )
+
+  // Table rows: one row per Scheme, showing its latest Date_Filter entry WITHIN
+  // the filtered set (group-after-filter). Older periods only surface in the
+  // detail modal's period toggle. Memoised so it only recomputes when the
+  // filtered set changes.
+  const rows = useMemo(() => latestPerScheme(filtered), [filtered])
+
+  const summary = useMemo(() => buildSummary(filtered), [filtered])
 
   const isFiltering =
     search.trim() !== '' || Object.values(filters).some((v) => v !== '')
@@ -75,27 +84,23 @@ export default function App() {
       return next
     })
 
-  // Header checkbox: select all filtered rows, or clear if all are selected.
+  // Header checkbox: select all grouped (visible) rows, or clear if all are.
   const toggleAll = () =>
     setSelectedIds((prev) => {
-      const allSelected =
-        filtered.length > 0 && filtered.every((r) => prev.has(r.Id))
-      return allSelected ? new Set() : new Set(filtered.map((r) => r.Id))
+      const allSelected = rows.length > 0 && rows.every((r) => prev.has(r.Id))
+      return allSelected ? new Set() : new Set(rows.map((r) => r.Id))
     })
 
-  const selectAllFiltered = () => setSelectedIds(new Set(filtered.map((r) => r.Id)))
+  const selectAllFiltered = () => setSelectedIds(new Set(rows.map((r) => r.Id)))
   const clearSelection = () => setSelectedIds(new Set())
 
-  // Export rules:
-  //  - If rows are ticked, export EXACTLY those rows (respect the selection).
-  //  - If nothing is ticked, export the filtered set deduplicated by Scheme,
-  //    keeping each scheme's most recent Date_Filter entry (see latestPerScheme).
+  // Export rules (each table row = a scheme's latest Date_Filter entry):
+  //  - If rows are ticked, export EXACTLY those (latest) rows.
+  //  - If nothing is ticked, export every grouped row (latest period per scheme).
   const handleExport = () => {
-    const rows =
-      selectedIds.size > 0
-        ? filtered.filter((r) => selectedIds.has(r.Id))
-        : latestPerScheme(filtered)
-    exportToXlsx(rows)
+    const out =
+      selectedIds.size > 0 ? records.filter((r) => selectedIds.has(r.Id)) : rows
+    exportToXlsx(out)
   }
 
   const statusText =
@@ -130,7 +135,8 @@ export default function App() {
 
         {status === 'ready' && tab === 'dashboard' && (
           <DashboardTab
-            records={filtered}
+            records={rows}
+            summary={summary}
             options={options}
             filters={filters}
             search={search}

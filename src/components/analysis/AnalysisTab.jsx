@@ -17,6 +17,7 @@ import {
   occupancyByStabilisation,
   UNIT_DEFS,
 } from '../../utils/analysis'
+import { latestPerScheme } from '../../utils/dateUtils'
 import { formatCurrency, formatCurrencyShort } from '../../utils/formatters'
 import ChartCard from './ChartCard'
 
@@ -106,24 +107,29 @@ export default function AnalysisTab({ records, basisLabel }) {
   const [unit, setUnit] = useState('Bed1') // default to 1-bed (most populated)
   const unitDef = UNIT_DEFS.find((u) => u.key === unit) || UNIT_DEFS[0]
 
+  // Hybrid source: rent / £psf / occupancy use ONE latest entry per scheme so a
+  // scheme reported across several periods isn't double-counted; "Records by
+  // date" deliberately keeps ALL entries so the per-period bars stay meaningful.
+  const latestRecords = useMemo(() => latestPerScheme(records), [records])
+
   const rentByTownAll = useMemo(
-    () => averageByGroupForField(records, 'Town', unitDef.rent),
-    [records, unitDef]
+    () => averageByGroupForField(latestRecords, 'Town', unitDef.rent),
+    [latestRecords, unitDef]
   )
   const psfByTownAll = useMemo(
-    () => averageByGroupForField(records, 'Town', unitDef.psf, { round: 2 }),
-    [records, unitDef]
+    () => averageByGroupForField(latestRecords, 'Town', unitDef.psf, { round: 2 }),
+    [latestRecords, unitDef]
   )
   const rentByRegion = useMemo(
-    () => averageByGroupForField(records, 'Regional_Filter', unitDef.rent),
-    [records, unitDef]
+    () => averageByGroupForField(latestRecords, 'Regional_Filter', unitDef.rent),
+    [latestRecords, unitDef]
   )
   const psfByRegion = useMemo(
-    () => averageByGroupForField(records, 'Regional_Filter', unitDef.psf, { round: 2 }),
-    [records, unitDef]
+    () => averageByGroupForField(latestRecords, 'Regional_Filter', unitDef.psf, { round: 2 }),
+    [latestRecords, unitDef]
   )
   const byDate = useMemo(() => countByDateFilter(records), [records])
-  const occupancy = useMemo(() => occupancyByStabilisation(records), [records])
+  const occupancy = useMemo(() => occupancyByStabilisation(latestRecords), [latestRecords])
 
   const rentByTown = rentByTownAll.slice(0, TOP_N)
   const psfByTown = psfByTownAll.slice(0, TOP_N)
