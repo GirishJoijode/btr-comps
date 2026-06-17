@@ -37,8 +37,10 @@ src/
     table/
       RentalCompsTable.jsx       #   Sortable, selectable comps table (row click opens detail modal)
     detail/
-      SchemeDetailModal.jsx      #   Full scheme detail pop-up (opened from a row click)
+      SchemeDetailModal.jsx      #   Full scheme detail pop-up (opened from a row/marker click)
       SchemeMapPanel.jsx         #   Map embed (if coords) or location-search fallback
+    map/
+      MapView.jsx                #   Map View tab: Leaflet + clustering, plots filtered rows
     analysis/
       AnalysisTab.jsx            #   Chart grid (recharts)
       ChartCard.jsx              #   Reusable chart card shell
@@ -61,6 +63,7 @@ docs/
 | **Table columns / order / format** | `src/config/tableColumns.js`           |
 | **Scheme detail modal content/layout** | `src/components/detail/SchemeDetailModal.jsx` |
 | **Map / location logic (coords + links)** | `src/components/detail/SchemeMapPanel.jsx`, `src/utils/location.js` |
+| **Map View tab (Leaflet markers + clustering)** | `src/components/map/MapView.jsx` |
 | **Which analysis charts appear**   | `src/components/analysis/AnalysisTab.jsx` |
 | **What dataset drives Analysis (selection > filters > all)** | `src/App.jsx` (`analysisRecords`) |
 | **Cascading (slicer) filter logic** | `src/utils/filters.js` (`buildCascadingOptions`) |
@@ -120,7 +123,20 @@ charts run on `latestPerScheme(records)` so a scheme reported across several
 periods isn't double-counted, while **Records by date** uses all entries so the
 per-period bars stay meaningful.
 
-## Map / location
+## Map View tab
+
+`MapView.jsx` plots the same grouped rows the table shows (`App.rows` =
+`latestPerScheme(filtered)`), so it always reflects the active filters and shows
+one marker per scheme. Coordinates come straight from each record via
+`getCoordinates()` (`Latitude`/`Longitude` etc.) — **no geocoding, lookups or
+caching**; records without valid coordinates are skipped and counted as
+"without coordinates". Markers cluster (`react-leaflet-cluster`) and expand on
+zoom; the view fits bounds only when the *set* of plotted schemes changes (not
+on selection). Each popup shares the global selection (`onToggleRow`) and opens
+the existing detail modal (`onRowClick` → `setActiveRecord`), so Table, Map and
+Analysis stay in sync on one `selectedIds` state.
+
+## Map / location (detail modal)
 
 The scheme detail modal resolves a location on demand when it opens
 (`SchemeMapPanel` → `utils/location.geocodeRecord`): explicit coordinates are

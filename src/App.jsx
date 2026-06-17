@@ -3,6 +3,7 @@ import AnalysisTab from './components/analysis/AnalysisTab'
 import { ErrorMessage, Loading } from './components/common/States'
 import Tabs from './components/common/Tabs'
 import DashboardTab from './components/dashboard/DashboardTab'
+import MapView from './components/map/MapView'
 import SchemeDetailModal from './components/detail/SchemeDetailModal'
 import { useRentalComps } from './hooks/useRentalComps'
 import {
@@ -17,6 +18,7 @@ import { exportToXlsx } from './utils/exportXlsx'
 
 const TABS = [
   { id: 'dashboard', label: 'Dashboard' },
+  { id: 'map', label: 'Map View' },
   { id: 'analysis', label: 'Analysis' },
 ]
 
@@ -150,6 +152,16 @@ export default function App() {
             onToggleRow={toggleRow}
             onToggleAll={toggleAll}
             onRowClick={setActiveRecord}
+          />
+        )}
+
+        {status === 'ready' && tab === 'map' && (
+          <MapView
+            records={rows}
+            selectedIds={selectedIds}
+            onToggleRow={toggleRow}
+            onRowClick={setActiveRecord}
+            onClearSelection={clearSelection}
           />
         )}
 
