@@ -10,6 +10,7 @@ import {
   applyFilters,
   buildCascadingOptions,
   EMPTY_FILTERS,
+  hasAnyFilterSelection,
   sanitizeFilters,
 } from './utils/filters'
 import { latestPerScheme } from './utils/dateUtils'
@@ -31,7 +32,6 @@ export default function App() {
   const [tab, setTab] = useState('dashboard')
   const [activeRecord, setActiveRecord] = useState(null)
 
-  // Power BI–style cascading options: recomputed from the other active filters.
   const options = useMemo(
     () => buildCascadingOptions(records, filters, search),
     [records, filters, search]
@@ -41,21 +41,11 @@ export default function App() {
     [records, filters, search]
   )
 
-  // Table rows: one row per Scheme, showing its latest Date_Filter entry WITHIN
-  // the filtered set (group-after-filter). Older periods only surface in the
-  // detail modal's period toggle. Memoised so it only recomputes when the
-  // filtered set changes.
   const rows = useMemo(() => latestPerScheme(filtered), [filtered])
-
   const summary = useMemo(() => buildSummary(filtered), [filtered])
 
-  const isFiltering =
-    search.trim() !== '' || Object.values(filters).some((v) => v !== '')
+  const isFiltering = search.trim() !== '' || hasAnyFilterSelection(filters)
 
-  // Dataset that drives the Analysis tab, in priority order:
-  //   1. Selected rows (selection overrides filters)
-  //   2. Filtered/search results
-  //   3. The full dataset
   const analysisRecords = useMemo(
     () =>
       selectedIds.size > 0 ? records.filter((r) => selectedIds.has(r.Id)) : filtered,
@@ -86,7 +76,6 @@ export default function App() {
       return next
     })
 
-  // Header checkbox: select all grouped (visible) rows, or clear if all are.
   const toggleAll = () =>
     setSelectedIds((prev) => {
       const allSelected = rows.length > 0 && rows.every((r) => prev.has(r.Id))
@@ -96,9 +85,6 @@ export default function App() {
   const selectAllFiltered = () => setSelectedIds(new Set(rows.map((r) => r.Id)))
   const clearSelection = () => setSelectedIds(new Set())
 
-  // Export rules (each table row = a scheme's latest Date_Filter entry):
-  //  - If rows are ticked, export EXACTLY those (latest) rows.
-  //  - If nothing is ticked, export every grouped row (latest period per scheme).
   const handleExport = () => {
     const out =
       selectedIds.size > 0 ? records.filter((r) => selectedIds.has(r.Id)) : rows

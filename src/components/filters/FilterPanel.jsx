@@ -1,4 +1,5 @@
 import { visibleFilterFields } from '../../config/filterConfig'
+import MultiSelectFilter from './MultiSelectFilter'
 
 export default function FilterPanel({
   options,
@@ -30,21 +31,14 @@ export default function FilterPanel({
 
       <div className="filters__grid">
         {visibleFilterFields(filters).map(({ key, label }) => (
-          <label className="field" key={key}>
-            <span className="field__label">{label}</span>
-            <select
-              className="field__input"
-              value={filters[key] || ''}
-              onChange={(e) => onFilterChange(key, e.target.value)}
-            >
-              <option value="">All</option>
-              {(options[key] || []).map((opt) => (
-                <option value={opt} key={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-          </label>
+          <MultiSelectFilter
+            key={key}
+            fieldKey={key}
+            label={label}
+            options={options[key] || []}
+            value={filters[key] || []}
+            onChange={(next) => onFilterChange(key, next)}
+          />
         ))}
       </div>
 

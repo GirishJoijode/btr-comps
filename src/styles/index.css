@@ -299,6 +299,110 @@ body {
   border-color: var(--navy);
   box-shadow: 0 0 0 3px rgba(37, 39, 58, 0.12);
 }
+
+/* Multi-select filter dropdowns */
+.ms-filter {
+  position: relative;
+}
+.ms-filter__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  text-align: left;
+  cursor: pointer;
+}
+.ms-filter__trigger.is-open {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px rgba(37, 39, 58, 0.12);
+}
+.ms-filter__trigger.has-selection {
+  border-color: var(--navy);
+}
+.ms-filter__value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ms-filter__chevron {
+  flex: none;
+  font-size: 0.75rem;
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+.ms-filter__trigger.is-open .ms-filter__chevron {
+  transform: rotate(180deg);
+}
+.ms-filter__menu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  max-height: 260px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ms-filter__clear {
+  flex: none;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.55rem 0.75rem;
+  border: 0;
+  border-bottom: 1px solid var(--line-soft);
+  background: #fafbfc;
+  color: var(--navy);
+  text-align: left;
+  cursor: pointer;
+}
+.ms-filter__clear:not(:disabled):hover {
+  background: var(--yellow);
+}
+.ms-filter__clear:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.ms-filter__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem 0;
+  overflow-y: auto;
+}
+.ms-filter__option {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+}
+.ms-filter__option:hover {
+  background: #f4f5f8;
+}
+.ms-filter__option input[type='checkbox'] {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--navy);
+  cursor: pointer;
+}
+.ms-filter__option-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .filters__actions {
   display: flex;
   align-items: center;

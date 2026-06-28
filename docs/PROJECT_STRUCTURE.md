@@ -33,7 +33,8 @@ src/
       DashboardTab.jsx           #   Composes summary + filters + table
       SummaryCards.jsx           #   KPI cards
     filters/
-      FilterPanel.jsx            #   Dropdown filters, search, action buttons
+      FilterPanel.jsx            #   Multi-select filters, search, action buttons
+      MultiSelectFilter.jsx      #   Checkbox dropdown for each filter field
     table/
       RentalCompsTable.jsx       #   Sortable, selectable comps table (row click opens detail modal)
     detail/
@@ -99,6 +100,9 @@ once per reporting period (e.g. `ABC / Q2 2025` and `ABC / Q3 2025`).
 
 ## Cascading filters (Power BI slicers)
 
+Each filter is a **multi-select** checkbox dropdown (`MultiSelectFilter.jsx`).
+Selections are stored as string arrays in `App.filters` (empty array = All).
+Within one filter, values combine with **OR** logic; across filters, **AND**.
 `buildCascadingOptions(records, filters, search)` computes each filter's options
 from the dataset filtered by every *other* active filter + search (not by the
 filter itself). The current selection is always kept in its own list so a

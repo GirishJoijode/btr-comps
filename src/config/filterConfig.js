@@ -34,7 +34,10 @@ export const SEARCH_FIELDS = ['Scheme', 'Town', 'Operator', 'Amenities', 'Commen
 export function isFilterVisible(field, filters) {
   const cond = field.visibleWhen
   if (!cond) return true
-  return cond.in.includes(filters[cond.key])
+  const parent = filters[cond.key]
+  const selected = Array.isArray(parent) ? parent : parent ? [parent] : []
+  if (selected.length === 0) return false
+  return selected.some((v) => cond.in.includes(v))
 }
 
 // The subset of FILTER_FIELDS currently visible for the given selections.
