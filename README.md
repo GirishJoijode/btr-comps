@@ -58,25 +58,6 @@ VITE_NINOX_URL=https://savills.ninoxdb.com/share/...
 Vite reads `import.meta.env.VITE_NINOX_URL` automatically; the value in
 `dataSource.js` is used as the fallback default.
 
-> **Note on CORS:** the browser fetches the Ninox URL directly. If the host ever
-> blocks cross-origin browser requests, the dashboard will show an error state.
-> In that case you can later route the request through a small proxy or function.
-
-## Deployment (GitHub Pages)
-
-This repo is deployment-ready in two ways:
-
-1. **GitHub Actions (recommended)** — [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
-   builds and deploys on every push to `main`.
-   In the repo settings, set **Settings → Pages → Build and deployment → Source**
-   to **GitHub Actions**.
-
-2. **Manual** — using the [`gh-pages`](https://www.npmjs.com/package/gh-pages) package:
-
-   ```bash
-   npm run deploy
-   ```
-
 The Vite `base` is set to `'./'` (relative paths), so the build works under any
 GitHub Pages sub-path without further configuration.
 
