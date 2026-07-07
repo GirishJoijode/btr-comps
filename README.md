@@ -28,22 +28,6 @@ Built with **React + Vite + JavaScript** (no TypeScript).
   selected, otherwise all currently filtered rows (`rental_comps_export.xlsx`).
 - Responsive / mobile-friendly layout.
 
-## Getting started
-
-```bash
-npm install
-npm run dev
-```
-
-Then open the URL Vite prints (usually `http://localhost:5173`).
-
-### Build
-
-```bash
-npm run build      # outputs to dist/
-npm run preview    # preview the production build locally
-```
-
 ## Configuration
 
 The Ninox JSON URL lives in **one place**:
