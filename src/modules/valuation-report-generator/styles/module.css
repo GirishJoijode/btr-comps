@@ -1,0 +1,168 @@
+.vrg-app {
+  min-height: 0;
+}
+
+.vrg-header-spacer {
+  flex: 1;
+}
+
+.vrg-main {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 1.4rem 1.6rem 1.8rem;
+}
+
+.vrg-shell {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.vrg-intro {
+  margin-bottom: 1.25rem;
+}
+
+.vrg-intro h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+  color: var(--navy);
+}
+
+.vrg-intro p {
+  margin: 0;
+  color: var(--muted);
+  max-width: 42rem;
+}
+
+.vrg-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 220px;
+  padding: 2rem;
+  border: 2px dashed var(--line);
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+  text-align: center;
+  color: var(--ink);
+}
+
+.vrg-drop.is-over {
+  border-color: var(--navy);
+  background: #f7f7fb;
+}
+
+.vrg-drop__title {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.vrg-drop__hint {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.vrg-file {
+  display: none;
+}
+
+.vrg-status {
+  margin-top: 1rem;
+  padding: 0.95rem 1.1rem;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+
+.vrg-status--error {
+  border-color: #c45656;
+  background: #fff7f7;
+}
+
+.vrg-status--ok {
+  border-color: #b9c9b4;
+  background: #f4faf2;
+}
+
+.vrg-status h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+}
+
+.vrg-status p,
+.vrg-status li {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--ink);
+}
+
+.vrg-status ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.vrg-summary {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.vrg-summary__card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.85rem 0.95rem;
+}
+
+.vrg-summary__label {
+  display: block;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+
+.vrg-summary__value {
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.vrg-actions {
+  margin-top: 1.1rem;
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.vrg-debug {
+  margin-top: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 0.7rem 0.95rem;
+}
+
+.vrg-debug summary {
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.vrg-debug ul {
+  margin: 0.55rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.82rem;
+  color: var(--ink);
+}
+
+@media (max-width: 800px) {
+  .vrg-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+}

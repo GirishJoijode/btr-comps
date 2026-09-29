@@ -4,8 +4,9 @@
 
 import { rentalCompsModule } from './rental-comps'
 import { operationalCostsModule } from './operational-costs'
+import { valuationReportModule } from './valuation-report-generator'
 
-export const MODULES = [rentalCompsModule, operationalCostsModule]
+export const MODULES = [rentalCompsModule, operationalCostsModule, valuationReportModule]
 
 export const DEFAULT_MODULE_ID = rentalCompsModule.id
 
