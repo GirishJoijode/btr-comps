@@ -71,8 +71,11 @@ export function toNumber(value) {
 export function toText(value) {
   if (value == null || value === '') return null
   if (value instanceof Date) return null
+  if (typeof value === 'number' && !Number.isFinite(value)) return null
+  if (looksLikeExcelError(value)) return null
   const s = String(value).trim()
-  return s === '' ? null : s
+  if (s === '' || /^(nan|null|undefined|infinity|-infinity)$/i.test(s) || looksLikeExcelError(s)) return null
+  return s
 }
 
 export function looksLikeExcelError(value) {

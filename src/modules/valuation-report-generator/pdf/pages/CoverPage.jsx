@@ -45,16 +45,10 @@ const s = StyleSheet.create({
     left: 40,
     right: 40,
     bottom: 28,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  brand: {
     fontSize: 9,
     letterSpacing: 2,
     color: COLORS.yellow,
   },
-  pageNo: { fontSize: 8, color: '#C5C7D4' },
 })
 
 export default function CoverPage({ model }) {
@@ -70,10 +64,7 @@ export default function CoverPage({ model }) {
         </Text>
         <Text style={s.muted}>Valuation date  {dash(meta.valuationDate)}</Text>
       </View>
-      <View style={s.footer}>
-        <Text style={s.brand}>SAVILLS  ·  OPERATIONAL INVESTMENT VALUATIONS</Text>
-        <Text style={s.pageNo} render={({ pageNumber, totalPages }) => `${pageNumber}  /  ${totalPages}`} />
-      </View>
+      <Text style={s.footer}>BTR VALUATION SUMMARY REPORT</Text>
     </Page>
   )
 }

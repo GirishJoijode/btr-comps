@@ -6,9 +6,55 @@ export function isMissing(value) {
   if (typeof value === 'number') return !Number.isFinite(value)
   if (typeof value === 'string') {
     const text = value.trim()
-    return text === '' || text === 'NaN' || text === 'undefined' || EXCEL_ERROR.test(text)
+    return (
+      text === '' ||
+      /^(nan|null|undefined|infinity|-infinity)$/i.test(text) ||
+      EXCEL_ERROR.test(text)
+    )
   }
   return false
+}
+
+export const isMissingValue = isMissing
+
+export function isValidNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+/** A ratio such as 0.0525. Zero is valid. Values above 1 are not treated as ratios. */
+export function isValidPercentage(value) {
+  return isValidNumber(value) && value >= 0 && value <= 1
+}
+
+export const safeCurrency = (value, options) => money(value, options)
+export const safePercentage = percent
+export const safeNumber = number
+export const safeText = dash
+
+export function safeDate(value) {
+  if (isMissing(value)) return null
+  const text = String(value).trim()
+  if (/invalid date/i.test(text)) return null
+  return text
+}
+
+export function hasMeaningfulData(value) {
+  if (isMissing(value)) return false
+  if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') return true
+  if (Array.isArray(value)) return value.some(hasMeaningfulData)
+  if (typeof value === 'object') {
+    return Object.entries(value).some(([key, item]) => key !== 'included' && hasMeaningfulData(item))
+  }
+  return false
+}
+
+/** Keep a row when at least one listed field is present. Zero counts as present. */
+export function filterValidRows(rows, keys) {
+  return (rows || []).filter((row) => keys.some((key) => !isMissing(row?.[key])))
+}
+
+export function usableImage(url) {
+  return typeof url === 'string' && /^data:image\/(png|jpe?g|gif|webp);base64,/i.test(url) ? url : null
 }
 
 export function money(value, { compact = false } = {}) {
@@ -83,6 +129,13 @@ export function isReportedUnitRow(row) {
   return ['units', 'areaSqFt', 'letAreaSqFt', 'incomePa', 'passingPa', 'ervPa'].some(
     (key) => typeof row[key] === 'number' && row[key] !== 0
   )
+}
+
+export function millions(value) {
+  if (isMissing(value) || !Number.isFinite(Number(value))) return '—'
+  const n = Number(value) / 1_000_000
+  const body = Math.abs(n).toFixed(2)
+  return n < 0 ? `(${body})` : body
 }
 
 export function pcm(value) {

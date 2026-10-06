@@ -23,9 +23,12 @@ export default function PasswordGate({ onSuccess }) {
       }
       persistAuthentication()
       onSuccess()
-    } catch {
+    } catch (err) {
+      const missing = String(err?.message || '').includes('VITE_APP_PASSWORD_HASH')
       setError(
-        'Authentication is not configured. Missing VITE_APP_PASSWORD_HASH.',
+        missing
+          ? 'Authentication is not configured. Missing VITE_APP_PASSWORD_HASH.'
+          : 'Could not check the password. Refresh the page and try again.',
       )
     }
   }

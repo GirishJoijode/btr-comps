@@ -1,5 +1,7 @@
 import { excelValueToDateParts, formatIsoDateStamp, formatUkLongDate } from '../parser/excelDates'
+import { usableImage } from '../utils/formatters'
 import { buildMarketRentExtras, parseRecentIncome, readCurrentIncomeRates } from './extendModel'
+import { parseCashflow, parseFurtherInfo, parseIncomeStatement, parseYieldProfile } from './phase3'
 import {
   cell,
   findExactLabel,
@@ -125,7 +127,20 @@ function parseCostCategories(income) {
       perSqFt: toNumber(income[r][3]),
       perUnit: toNumber(income[r][4]),
     })
-    if (/^total$/i.test(name)) break
+    if (/^total$/i.test(name)) {
+      const nextName = toText(income[r + 1]?.[0])
+      if (nextName && /^net income$/i.test(nextName)) {
+        const next = income[r + 1]
+        cats.push({
+          name: nextName,
+          costPa: toNumber(next[1]),
+          pctOfIncome: toNumber(next[2]),
+          perSqFt: toNumber(next[3]),
+          perUnit: toNumber(next[4]),
+        })
+      }
+      break
+    }
   }
   return cats
 }
@@ -228,7 +243,7 @@ function investmentHasRows(rows) {
   return false
 }
 
-export function buildReportModel(workbook, XLSX, { propertyImage = null } = {}) {
+export function buildReportModel(workbook, XLSX, { propertyImage = null, additionalImages = [] } = {}) {
   const rowsFor = makeRowReader(XLSX)
   const exec = rowsFor(workbook, 'EXECUTIVE SUMMARY')
   const prop = rowsFor(workbook, 'Property Summary')
@@ -236,6 +251,7 @@ export function buildReportModel(workbook, XLSX, { propertyImage = null } = {}) 
   const erv = rowsFor(workbook, 'ERV Report')
   const evidence = rowsFor(workbook, 'Rental Evidence')
   const investmentRows = rowsFor(workbook, 'Investment Evidence')
+  const valuationRows = rowsFor(workbook, 'Val Summary - Existing')
 
   const accommodation = findAccommodation(exec)
   const yields = yieldFromExec(exec)
@@ -287,6 +303,8 @@ export function buildReportModel(workbook, XLSX, { propertyImage = null } = {}) 
   const ervByUnitType = parseErvByUnitType(erv)
   const marketExtras = buildMarketRentExtras(exec, erv, rentalEvidence, ervByUnitType)
   const recentIncome = parseRecentIncome(income)
+  const incomeByUnitType = parseIncomeByUnitType(income)
+  const averageRentPcm = incomeByUnitType.find((row) => row.type === 'Total')?.avgPcm ?? null
 
   const leased = findLabel(exec, 'Leased')
   const vacant = findLabel(exec, 'Vacant')
@@ -346,16 +364,18 @@ export function buildReportModel(workbook, XLSX, { propertyImage = null } = {}) 
       grossPerUnit: incomeRates.grossPerUnit,
       perSqFt: incomeRates.netPerSqFt,
       perUnit: incomeRates.netPerUnit,
+      statement: parseIncomeStatement(exec),
+      averageRentPcm,
     },
     recentIncome,
-    incomeByUnitType: parseIncomeByUnitType(income),
+    incomeByUnitType,
     operatingCosts: {
       total: totalCosts ?? totalCat?.costPa ?? null,
       perSqFt: totalCat?.perSqFt ?? null,
       perUnit: totalCat?.perUnit ?? null,
       ratio: totalCat?.pctOfIncome ?? null,
       grossToNet,
-      categories: costCats.filter((c) => !/^net income$/i.test(c.name)),
+      categories: costCats,
     },
     marketRent: {
       grossErv: grossErv ?? execTotalRow.erv,
@@ -393,12 +413,17 @@ export function buildReportModel(workbook, XLSX, { propertyImage = null } = {}) 
     rentalBenchmarks: marketExtras.benchmarks,
     investment: {
       included: false,
+      evidenceRows: investmentHasRows(investmentRows),
       reason: investmentHasRows(investmentRows)
         ? 'Investment evidence rows were found but this report version does not yet render that section.'
-        : 'Investment section omitted — insufficient mapped source data.',
+        : 'Investment comparables omitted — the Investment Evidence sheet has no transactions.',
     },
+    yieldProfile: parseYieldProfile(exec),
+    cashflow: parseCashflow(valuationRows),
+    furtherInfo: parseFurtherInfo(prop),
     images: {
-      propertyImage: propertyImage?.dataUrl || null,
+      propertyImage: usableImage(propertyImage?.dataUrl),
+      additional: (additionalImages || []).map((image) => usableImage(image?.dataUrl)).filter(Boolean),
     },
   }
 }

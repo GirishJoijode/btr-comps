@@ -26,12 +26,19 @@ export function KpiRow({ children }) {
   return <View style={s.row}>{children}</View>
 }
 
+function shown(value) {
+  if (value == null) return false
+  const text = String(value).trim()
+  return text !== '' && text !== '—' && text !== '-'
+}
+
 export function Kpi({ label, value, sub, dark }) {
+  if (!shown(value)) return null
   return (
     <View style={[s.card, dark ? s.dark : null]}>
       <Text style={dark ? s.labelDark : s.label}>{label}</Text>
       <Text style={dark ? s.valueDark : s.value}>{value}</Text>
-      {sub ? <Text style={dark ? s.subDark : s.sub}>{sub}</Text> : null}
+      {shown(sub) ? <Text style={dark ? s.subDark : s.sub}>{sub}</Text> : null}
     </View>
   )
 }

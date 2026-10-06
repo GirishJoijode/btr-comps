@@ -39,29 +39,29 @@ const s = StyleSheet.create({
 })
 
 function Kpi({ label, value, sub, dark }) {
+  if (value == null || value === '—' || value === '') return null
   return (
     <View style={[s.kpi, dark ? s.dark : null]}>
       <Text style={dark ? s.labelL : s.label}>{label}</Text>
       <Text style={dark ? s.valueL : s.value}>{value}</Text>
-      {sub ? <Text style={s.sub}>{sub}</Text> : null}
+      {sub && sub !== '—' ? <Text style={s.sub}>{sub}</Text> : null}
     </View>
   )
 }
 
-export default function OperatingCostsPage({ model }) {
+export default function OperatingCostsPage({ model, section = '02' }) {
   const costs = model.operatingCosts
   const cats = (costs.categories || []).filter(
-    (row) => !( /^other$/i.test(row.name) && (row.costPa == null || row.costPa === 0) )
+    (row) => row.costPa != null || row.pctOfIncome != null || row.perSqFt != null || row.perUnit != null,
   )
   return (
     <Page size={PAGE.size} orientation={PAGE.orientation} style={s.page}>
-      <ReportHeader section="05  Operating costs" title="Current running costs" />
+      <ReportHeader section={`${section}  Operating costs`} title="Current running costs" />
       <View style={s.kpis}>
         <Kpi dark label="Total costs" value={money(costs.total, { compact: true })} />
-        <Kpi label="£ per sq ft" value={money2(costs.perSqFt)} />
-        <Kpi label="£ per unit" value={money2(costs.perUnit)} />
         <Kpi label="Cost ratio" value={percent(costs.ratio, 1)} sub="of income net of bad debt" />
-        <Kpi label="Gross to net" value={percent(costs.grossToNet, 1)} sub="pre mgmt fee & cap-ex" />
+        <Kpi label="£ per flat" value={money2(costs.perUnit)} />
+        <Kpi label="£ per sq ft" value={money2(costs.perSqFt)} />
       </View>
       <View style={s.table}>
         <View style={s.head}>
@@ -75,7 +75,7 @@ export default function OperatingCostsPage({ model }) {
           <Text style={[s.th, s.c4]}>£ per unit</Text>
         </View>
         {cats.map((c) => {
-          const total = /^total$/i.test(c.name)
+          const total = /^(total|sub[-\s]?total|net income)$/i.test(c.name)
           return (
             <View key={c.name} style={s.tr} wrap={false}>
               <Text style={[s.td, s.c0, total ? s.total : null]}>{dash(c.name)}</Text>
@@ -87,7 +87,7 @@ export default function OperatingCostsPage({ model }) {
           )
         })}
       </View>
-      <ReportFooter model={model} page="5" />
+      <ReportFooter model={model} />
     </Page>
   )
 }

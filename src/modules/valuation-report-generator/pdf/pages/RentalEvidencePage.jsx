@@ -18,10 +18,10 @@ const s = StyleSheet.create({
   th: { fontSize: 6.5, color: COLORS.muted, fontFamily: 'Helvetica-Bold' },
   td: { fontSize: 7.5, color: COLORS.ink },
   bold: { fontFamily: 'Helvetica-Bold', color: COLORS.navy },
-  name: { width: '13%' },
-  op: { width: '15%' },
-  num: { width: '8%', textAlign: 'right' },
-  rent: { width: '7%', textAlign: 'right' },
+  name: { width: '16%' },
+  op: { width: '16%' },
+  num: { width: '9%', textAlign: 'right' },
+  rent: { width: '8.33%', textAlign: 'right' },
 })
 
 function rentCell(value, psf) {
@@ -29,35 +29,55 @@ function rentCell(value, psf) {
   return psf ? money2(value) : money(value)
 }
 
-export default function RentalEvidencePage({ model }) {
+const BED_FIELDS = [
+  { type: 'Studio', rent: 'studio', psf: 'studioPsf', avgRent: 'studioRent', avgPsf: 'studioPsf' },
+  { type: '1 Bed', rent: 'bed1', psf: 'bed1Psf' },
+  { type: '2 Bed', rent: 'bed2', psf: 'bed2Psf' },
+  { type: '3 Bed', rent: 'bed3', psf: 'bed3Psf' },
+]
+
+export default function RentalEvidencePage({ model, section = '03' }) {
   const bench = model.rentalBenchmarks || {}
-  const schemes = (model.rentalEvidence || []).filter((row) => !row.isAverage)
+  const schemes = (model.rentalEvidence || []).filter((row) => row && !row.isAverage && row.scheme)
   const bed = (type) => (bench.beds || []).find((row) => row.type === type)
+  const columns = BED_FIELDS.filter((field) =>
+    schemes.some((row) => row[field.rent] != null || row[field.psf] != null),
+  )
   const average = {
     scheme: 'Average',
     operator: null,
     units: bench.averageUnits,
     launched: null,
-    studio: bench.studioRent,
-    studioPsf: bench.studioPsf,
-    bed1: bed('1 Bed')?.comparableRent,
-    bed1Psf: bed('1 Bed')?.comparablePsf,
-    bed2: bed('2 Bed')?.comparableRent,
-    bed2Psf: bed('2 Bed')?.comparablePsf,
-    bed3: bed('3 Bed')?.comparableRent,
-    bed3Psf: bed('3 Bed')?.comparablePsf,
     derived: true,
   }
-  const rows = [...schemes, average]
+  for (const field of columns) {
+    if (field.type === 'Studio') {
+      average[field.rent] = bench.studioRent
+      average[field.psf] = bench.studioPsf
+    } else {
+      average[field.rent] = bed(field.type)?.comparableRent
+      average[field.psf] = bed(field.type)?.comparablePsf
+    }
+  }
+  const rows = schemes.length ? [...schemes, average] : []
+  const rentWidth = `${50 / Math.max(columns.length * 2, 1)}%`
+  const cards = [
+    { label: 'Average units', value: number(bench.averageUnits, 0), sub: `${number(bench.schemeCount)} schemes`, dark: true },
+    ...['1 Bed', '2 Bed', '3 Bed']
+      .filter((type) => columns.some((field) => field.type === type))
+      .map((type) => ({
+        label: `Average ${type.toLowerCase()}`,
+        value: money(bed(type)?.comparableRent),
+        sub: `${money2(bed(type)?.comparablePsf)} per sq ft`,
+      })),
+  ]
   return (
     <Page size={PAGE.size} orientation={PAGE.orientation} style={s.page}>
-      <ReportHeader section="08  Rental evidence" title="Comparable schemes" />
+      <ReportHeader section={`${section}  Rental evidence`} title="Comparable schemes" />
       <KpiRow>
-        <Kpi dark label="Schemes" value={number(bench.schemeCount)} />
-        <Kpi label="Average units" value={number(bench.averageUnits, 0)} />
-        <Kpi label="Average 1 bed" value={money(bed('1 Bed')?.comparableRent)} sub="pcm, schemes with a 1 bed rent" />
-        <Kpi label="Average 2 bed" value={money(bed('2 Bed')?.comparableRent)} sub="pcm" />
-        <Kpi label="Average 3 bed" value={money(bed('3 Bed')?.comparableRent)} sub="pcm, blank 3 beds excluded" />
+        {cards.map((card) => (
+          <Kpi key={card.label} dark={card.dark} label={card.label} value={card.value} sub={card.sub} />
+        ))}
       </KpiRow>
       <View style={s.table}>
         <View style={s.head}>
@@ -67,15 +87,11 @@ export default function RentalEvidencePage({ model }) {
           <Text style={[s.th, s.name]}>Scheme</Text>
           <Text style={[s.th, s.op]}>Operator</Text>
           <Text style={[s.th, s.num]}>Units</Text>
-          <Text style={[s.th, s.num]}>Launched</Text>
-          <Text style={[s.th, s.rent]}>Studio</Text>
-          <Text style={[s.th, s.rent]}>£psf</Text>
-          <Text style={[s.th, s.rent]}>1 Bed</Text>
-          <Text style={[s.th, s.rent]}>£psf</Text>
-          <Text style={[s.th, s.rent]}>2 Bed</Text>
-          <Text style={[s.th, s.rent]}>£psf</Text>
-          <Text style={[s.th, s.rent]}>3 Bed</Text>
-          <Text style={[s.th, s.rent]}>£psf</Text>
+          <Text style={[s.th, s.num]}>Launch</Text>
+          {columns.flatMap((field) => [
+            <Text key={field.type} style={[s.th, s.rent, { width: rentWidth }]}>{field.type}</Text>,
+            <Text key={`${field.type}-psf`} style={[s.th, s.rent, { width: rentWidth }]}>£psf</Text>,
+          ])}
         </View>
         {rows.map((row) => (
           <View key={row.scheme} style={s.tr} wrap={false}>
@@ -83,14 +99,10 @@ export default function RentalEvidencePage({ model }) {
             <Text style={[s.td, s.op]}>{dash(row.operator)}</Text>
             <Text style={[s.td, s.num]}>{number(row.units, 0)}</Text>
             <Text style={[s.td, s.num]}>{dash(row.launched)}</Text>
-            <Text style={[s.td, s.rent]}>{rentCell(row.studio)}</Text>
-            <Text style={[s.td, s.rent]}>{rentCell(row.studioPsf, true)}</Text>
-            <Text style={[s.td, s.rent]}>{rentCell(row.bed1)}</Text>
-            <Text style={[s.td, s.rent]}>{rentCell(row.bed1Psf, true)}</Text>
-            <Text style={[s.td, s.rent]}>{rentCell(row.bed2)}</Text>
-            <Text style={[s.td, s.rent]}>{rentCell(row.bed2Psf, true)}</Text>
-            <Text style={[s.td, s.rent]}>{rentCell(row.bed3)}</Text>
-            <Text style={[s.td, s.rent]}>{rentCell(row.bed3Psf, true)}</Text>
+            {columns.flatMap((field) => [
+              <Text key={field.rent} style={[s.td, s.rent, { width: rentWidth }]}>{rentCell(row[field.rent])}</Text>,
+              <Text key={field.psf} style={[s.td, s.rent, { width: rentWidth }]}>{rentCell(row[field.psf], true)}</Text>,
+            ])}
           </View>
         ))}
       </View>

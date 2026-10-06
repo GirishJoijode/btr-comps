@@ -48,17 +48,22 @@ export function ReportHeader({ section, title }) {
         <Text style={s.kicker}>{section}</Text>
         <Text style={s.title}>{title}</Text>
       </View>
-      <Text style={s.brand}>SAVILLS</Text>
     </View>
   )
 }
 
-export function ReportFooter({ model, tone = 'light' }) {
+export function ReportFooter({ model, tone = 'light', numbered = true }) {
   const color = tone === 'dark' ? '#C5C7D4' : COLORS.muted
+  const name = model.meta.propertyName || 'Property'
   return (
     <View style={[s.footer, { color }]} fixed>
-      <Text>{(model.meta.propertyName || 'Property') + '  |  Valuation Summary'}</Text>
-      <Text render={({ pageNumber, totalPages }) => `${pageNumber}  /  ${totalPages}`} />
+      <Text>{`${name}  |  VALUATION SUMMARY REPORT`}</Text>
+      <Text>CONFIDENTIAL</Text>
+      {numbered ? (
+        <Text render={({ pageNumber }) => String(Math.max(1, pageNumber - 2))} />
+      ) : (
+        <Text> </Text>
+      )}
     </View>
   )
 }

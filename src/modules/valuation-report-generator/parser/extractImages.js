@@ -17,6 +17,7 @@ function parseRelationships(xml) {
 function resolveZipPath(fromPath, target) {
   if (target.startsWith('/')) return target.slice(1)
   const parts = fromPath.split('/').slice(0, -1)
+  if (parts[parts.length - 1] === '_rels') parts.pop()
   for (const seg of target.split('/')) {
     if (seg === '..') parts.pop()
     else if (seg && seg !== '.') parts.push(seg)
@@ -86,35 +87,39 @@ function imageFromWorksheet(files, worksheetPath) {
  * Prefers the raster image anchored on Property Summary; falls back to the
  * largest raster in xl/media. EMF/WMF drawings are ignored.
  */
-export function extractPropertyImage(arrayBuffer) {
-  const files = unzipSync(new Uint8Array(arrayBuffer))
-  const names = Object.keys(files)
-  const preferredMedia = imageFromWorksheet(
-    files,
-    worksheetPathForSheet(files, 'Property Summary')
-  )
-
-  const tryPath = (path) => {
-    if (!path || !files[path]) return null
-    const mime = mimeFor(path)
-    if (!mime) return null
+function tryImage(files, path) {
+  if (!path || !files[path] || files[path].length < 64) return null
+  const mime = mimeFor(path)
+  if (!mime) return null
+  try {
     return { dataUrl: bytesToDataUrl(files[path], mime), path }
+  } catch {
+    return null
   }
+}
 
-  const preferred = tryPath(preferredMedia)
-  if (preferred) return preferred
-
-  let best = null
-  let bestSize = 0
-  for (const name of names) {
-    if (!name.startsWith('xl/media/')) continue
-    const mime = mimeFor(name)
-    if (!mime) continue
-    const size = files[name].length
-    if (size > bestSize) {
-      bestSize = size
-      best = tryPath(name)
-    }
+/**
+ * Raster images anchored on workbook drawings. EMF/WMF drawings are ignored.
+ * The Property Summary image is the primary photograph. Other sheet photos are
+ * returned separately and are not duplicated.
+ */
+export function extractWorkbookImages(arrayBuffer) {
+  const files = unzipSync(new Uint8Array(arrayBuffer))
+  const primaryPath = imageFromWorksheet(files, worksheetPathForSheet(files, 'Property Summary'))
+  const propertyImage = tryImage(files, primaryPath)
+  const additional = []
+  const seen = new Set(primaryPath ? [primaryPath] : [])
+  for (const sheet of ['EXECUTIVE SUMMARY']) {
+    const path = imageFromWorksheet(files, worksheetPathForSheet(files, sheet))
+    if (!path || seen.has(path)) continue
+    const image = tryImage(files, path)
+    if (!image) continue
+    seen.add(path)
+    additional.push(image)
   }
-  return best
+  return { propertyImage, additionalImages: additional }
+}
+
+export function extractPropertyImage(arrayBuffer) {
+  return extractWorkbookImages(arrayBuffer).propertyImage
 }

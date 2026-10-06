@@ -1,15 +1,62 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Component, useCallback, useEffect, useRef, useState } from 'react'
 import { Loading } from '../../components/common/States'
 import ModuleSwitcher from '../ModuleSwitcher'
 import { valuationReportMeta } from './meta'
 import { parseOliveArrayBuffer } from './parser/parseOliveWorkbook'
+import { rejectUpload } from './validation/uploadRules'
 import { money, number, sqft } from './utils/formatters'
 import { buildPdfFilename } from './utils/filename'
 import './styles/module.css'
 
 const ACCEPT = '.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
-export default function ValuationReportGenerator({
+class ReportModuleBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { failed: false }
+  }
+
+  static getDerivedStateFromError() {
+    return { failed: true }
+  }
+
+  componentDidCatch(error) {
+    if (import.meta.env.DEV) {
+      console.warn('[valuation-report] module render failed', error?.name || 'Error')
+    }
+  }
+
+  render() {
+    if (this.state.failed) {
+      return (
+        <div className="app vrg-app">
+          <main className="app-main vrg-main">
+            <div className="vrg-shell">
+              <div className="vrg-status vrg-status--error" role="alert">
+                <h3>Generation error</h3>
+                <p>Unable to generate the PDF. Please review the workbook and try again.</p>
+                <button type="button" className="btn btn--primary" onClick={() => this.setState({ failed: false })}>
+                  Try again
+                </button>
+              </div>
+            </div>
+          </main>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
+export default function ValuationReportGenerator(props) {
+  return (
+    <ReportModuleBoundary>
+      <ValuationReportGeneratorInner {...props} />
+    </ReportModuleBoundary>
+  )
+}
+
+function ValuationReportGeneratorInner({
   activeModuleId,
   onModuleChange,
   logoutControl,
@@ -23,6 +70,7 @@ export default function ValuationReportGenerator({
   const [model, setModel] = useState(null)
   const [sheets, setSheets] = useState([])
   const [checks, setChecks] = useState([])
+  const [details, setDetails] = useState([])
   const [download, setDownload] = useState(null)
 
   const clearObjectUrl = () => {
@@ -32,22 +80,28 @@ export default function ValuationReportGenerator({
     }
   }
 
-  useEffect(() => () => clearObjectUrl(), [])
-
-  const handleFile = useCallback(async (file) => {
-    if (!file) return
+  const resetSession = () => {
     clearObjectUrl()
     setDownload(null)
     setModel(null)
     setSheets([])
     setChecks([])
     setWarnings([])
+    setDetails([])
     setMessage('')
+    setPhase('idle')
+  }
 
-    const name = (file.name || '').toLowerCase()
-    if (!name.endsWith('.xlsx')) {
+  useEffect(() => () => clearObjectUrl(), [])
+
+  const handleFile = useCallback(async (file) => {
+    if (!file) return
+    resetSession()
+
+    const rejected = rejectUpload(file)
+    if (rejected) {
       setPhase('invalid')
-      setMessage('Please upload an .xlsx OLIVE valuation export.')
+      setMessage(rejected)
       return
     }
 
@@ -63,6 +117,8 @@ export default function ValuationReportGenerator({
           validation.userMessage ||
             'Invalid OLIVE valuation export. The workbook structure does not match the expected report template.'
         )
+        setDetails((validation.errors || []).slice(1))
+        setWarnings(validation.warnings || [])
         return
       }
       setModel(nextModel)
@@ -70,11 +126,12 @@ export default function ValuationReportGenerator({
       setChecks(validation.checksPassed || [])
       setWarnings(validation.warnings || [])
       setPhase('ready')
-    } catch {
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.warn('[valuation-report] upload failed', error?.name || 'Error')
+      }
       setPhase('invalid')
-      setMessage(
-        'Invalid OLIVE valuation export. The workbook structure does not match the expected report template.'
-      )
+      setMessage('Unable to read this workbook. Please upload a valid OLIVE Excel export.')
     }
   }, [])
 
@@ -90,9 +147,12 @@ export default function ValuationReportGenerator({
       objectUrlRef.current = url
       setDownload({ url, name: buildPdfFilename(model) })
       setPhase('generated')
-    } catch {
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.warn('[valuation-report] pdf generation failed', error?.name || 'Error')
+      }
       setPhase('error')
-      setMessage('The report could not be generated from this workbook. Please try again or check the export.')
+      setMessage('Unable to generate the PDF. Please review the workbook and try again.')
     }
   }
 
@@ -180,6 +240,18 @@ export default function ValuationReportGenerator({
             <div className="vrg-status vrg-status--error" role="alert">
               <h3>{phase === 'invalid' ? 'Invalid workbook' : 'Generation error'}</h3>
               <p>{message}</p>
+              {details.length > 0 ? (
+                <ul>
+                  {details.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              ) : null}
+              {phase === 'error' ? (
+                <button type="button" className="btn btn--primary" onClick={generate}>
+                  Try again
+                </button>
+              ) : null}
             </div>
           ) : null}
 

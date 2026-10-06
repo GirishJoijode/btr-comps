@@ -1,7 +1,7 @@
 import { Image, Page, StyleSheet, Text, View } from '@react-pdf/renderer'
 import { ReportFooter, ReportHeader } from '../components/Chrome'
 import { COLORS, PAGE } from '../theme'
-import { dash, number, sqft } from '../../utils/formatters'
+import { dash, isMissing, number, sqft } from '../../utils/formatters'
 
 const s = StyleSheet.create({
   page: {
@@ -37,12 +37,6 @@ const s = StyleSheet.create({
   },
   photo: { width: '100%', height: 360, objectFit: 'cover' },
   photoCap: { padding: 10, fontSize: 9, color: COLORS.muted },
-  missing: {
-    height: 280,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#EEEDF3',
-  },
 })
 
 function Row({ label, value }) {
@@ -54,41 +48,44 @@ function Row({ label, value }) {
   )
 }
 
-export default function PropertyOverviewPage({ model }) {
+export default function PropertyOverviewPage({ model, section = '02', furtherSection = null }) {
   const { property, meta, images } = model
+  const rows = [
+    ['Property', meta.propertyName],
+    ['Location', meta.location],
+    ['Sub-sector', meta.subSector],
+    ['Operator', property.operator],
+    ['Units', number(property.units)],
+    ['Area', sqft(property.areaSqFt)],
+    ['Average unit size', sqft(property.averageUnitSize)],
+    ['Year of construction', property.yearBuilt],
+    ['Year of modernisation', property.yearModernised],
+    ['Tenure', property.tenure],
+    ['Affordable', property.affordable],
+  ].filter(([, value]) => !isMissing(value) && value !== '—')
+  const photo = images.propertyImage
   return (
     <Page size={PAGE.size} orientation={PAGE.orientation} style={s.page}>
-      <ReportHeader section="02  Property overview" title="Asset profile" />
+      <ReportHeader section={`${section}  Property overview`} title="Asset profile" />
       <View style={s.row}>
         <View style={s.table}>
           <Text style={s.caption}>PROPERTY / ASSET PROFILE</Text>
-          <Row label="Property" value={dash(meta.propertyName)} />
-          <Row label="Location" value={dash(meta.location)} />
-          <Row label="Sub-sector" value={dash(meta.subSector)} />
-          <Row label="Operator" value={dash(property.operator)} />
-          <Row label="Units" value={number(property.units)} />
-          <Row label="Area" value={sqft(property.areaSqFt)} />
-          <Row label="Average unit size" value={sqft(property.averageUnitSize)} />
-          <Row label="Year of construction" value={dash(property.yearBuilt)} />
-          <Row label="Year of modernisation" value={dash(property.yearModernised)} />
-          <Row label="Tenure" value={dash(property.tenure)} />
-          <Row label="Affordable" value={dash(property.affordable)} />
+          {rows.map(([label, value]) => (
+            <Row key={label} label={label} value={dash(value)} />
+          ))}
         </View>
-        <View style={s.photoWrap}>
-          {images.propertyImage ? (
-            <Image src={images.propertyImage} style={s.photo} />
-          ) : (
-            <View style={s.missing}>
-              <Text style={{ fontSize: 9, color: COLORS.muted }}>No photograph in workbook</Text>
-            </View>
-          )}
-          <Text style={s.photoCap}>
-            {dash(meta.propertyName)}
-            {meta.location ? `, ${meta.location}` : ''}
-          </Text>
-        </View>
+        {photo ? (
+          <View style={s.photoWrap}>
+            <Image src={photo} style={s.photo} />
+            <Text style={s.photoCap}>
+              {dash(meta.propertyName)}
+              {meta.location ? `, ${meta.location}` : ''}
+              {furtherSection ? `  ·  Further detail in section ${furtherSection}` : ''}
+            </Text>
+          </View>
+        ) : null}
       </View>
-      <ReportFooter model={model} page="3" />
+      <ReportFooter model={model} />
     </Page>
   )
 }

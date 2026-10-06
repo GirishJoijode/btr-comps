@@ -39,7 +39,11 @@ export function excelValueToDateParts(value) {
 
 export function formatUkLongDate(parts) {
   if (!parts) return null
-  const d = new Date(Date.UTC(parts.year, parts.month - 1, parts.day))
+  const { year, month, day } = parts
+  if (!Number.isInteger(year) || month < 1 || month > 12 || day < 1 || day > 31) return null
+  const d = new Date(Date.UTC(year, month - 1, day))
+  if (Number.isNaN(d.getTime())) return null
+  if (d.getUTCFullYear() !== year || d.getUTCMonth() !== month - 1 || d.getUTCDate() !== day) return null
   return d.toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'long',

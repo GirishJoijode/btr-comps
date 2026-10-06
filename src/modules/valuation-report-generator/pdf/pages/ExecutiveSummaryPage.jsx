@@ -75,8 +75,32 @@ function Cell({ label, value }) {
   )
 }
 
+function present(value) {
+  return value && value !== '—'
+}
+
 export default function ExecutiveSummaryPage({ model }) {
   const { valuation, property, currentIncome, marketRent, meta } = model
+  const yields = [
+    ['Equivalent yield', percent(valuation.equivalentYield, 2)],
+    ['Reversionary yield (triple net)', percent(valuation.reversionaryYield, 2)],
+    ['Initial yield (triple net)', percent(valuation.netInitialYield, 2)],
+    ['IRR', percent(valuation.irr, 2)],
+  ].filter(([, value]) => present(value))
+  const cells = [
+    ['Area', sqft(property.areaSqFt)],
+    ['Units', number(property.units)],
+    ['Occupancy', percent(currentIncome.occupancy, 1)],
+    ['Average unit size', sqft(property.averageUnitSize)],
+    ['Current net income', money(currentIncome.netIncome, { compact: true })],
+    ['Current gross income', money(currentIncome.grossIncome, { compact: true })],
+    ['Net ERV', money(marketRent.netErv, { compact: true })],
+    ['Gross ERV', money(marketRent.grossErv, { compact: true })],
+    ['Year built', dash(property.yearBuilt)],
+    ['Tenure', dash(property.tenure)],
+    ['Operator', dash(property.operator)],
+    ['Valuation date', dash(meta.valuationDate)],
+  ].filter(([, value]) => present(value))
   return (
     <Page size={PAGE.size} orientation={PAGE.orientation} style={s.page}>
       <ReportHeader section="01  Executive summary" title={dash(meta.propertyName)} />
@@ -84,40 +108,23 @@ export default function ExecutiveSummaryPage({ model }) {
         <View style={s.hero}>
           <Text style={s.heroLabel}>Market value</Text>
           <Text style={s.heroValue}>{money(valuation.marketValue, { compact: true })}</Text>
-          <Text style={s.heroSub}>{money2(valuation.valuePerSqFt)} per sq ft</Text>
+          {present(money2(valuation.valuePerSqFt)) ? (
+            <Text style={s.heroSub}>{money2(valuation.valuePerSqFt)} per sq ft</Text>
+          ) : null}
         </View>
-        <View style={s.kpi}>
-          <Text style={s.kpiLabel}>Equivalent yield</Text>
-          <Text style={s.kpiValue}>{percent(valuation.equivalentYield, 2)}</Text>
-        </View>
-        <View style={s.kpi}>
-          <Text style={s.kpiLabel}>Reversionary yield (triple net)</Text>
-          <Text style={s.kpiValue}>{percent(valuation.reversionaryYield, 2)}</Text>
-        </View>
-        <View style={s.kpi}>
-          <Text style={s.kpiLabel}>Initial yield (triple net)</Text>
-          <Text style={s.kpiValue}>{percent(valuation.netInitialYield, 2)}</Text>
-        </View>
-        <View style={s.kpi}>
-          <Text style={s.kpiLabel}>IRR</Text>
-          <Text style={s.kpiValue}>{percent(valuation.irr, 2)}</Text>
-        </View>
+        {yields.map(([label, value]) => (
+          <View key={label} style={s.kpi}>
+            <Text style={s.kpiLabel}>{label}</Text>
+            <Text style={s.kpiValue}>{value}</Text>
+          </View>
+        ))}
       </View>
       <View style={s.grid}>
-        <Cell label="Area" value={sqft(property.areaSqFt)} />
-        <Cell label="Units" value={number(property.units)} />
-        <Cell label="Occupancy" value={percent(currentIncome.occupancy, 1)} />
-        <Cell label="Average unit size" value={sqft(property.averageUnitSize)} />
-        <Cell label="Current net income" value={money(currentIncome.netIncome, { compact: true })} />
-        <Cell label="Current gross income" value={money(currentIncome.grossIncome, { compact: true })} />
-        <Cell label="Net market rent" value={money(marketRent.netErv, { compact: true })} />
-        <Cell label="Gross ERV" value={money(marketRent.grossErv, { compact: true })} />
-        <Cell label="Year built" value={dash(property.yearBuilt)} />
-        <Cell label="Tenure" value={dash(property.tenure)} />
-        <Cell label="Operator" value={dash(property.operator)} />
-        <Cell label="Valuation date" value={dash(meta.valuationDate)} />
+        {cells.map(([label, value]) => (
+          <Cell key={label} label={label} value={value} />
+        ))}
       </View>
-      <ReportFooter model={model} page="2" />
+      <ReportFooter model={model} />
     </Page>
   )
 }

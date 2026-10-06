@@ -2,7 +2,7 @@ import { Page, StyleSheet, Text, View } from '@react-pdf/renderer'
 import { ReportFooter, ReportHeader } from '../components/Chrome'
 import { Kpi, KpiRow } from '../components/Metrics'
 import { COLORS, PAGE } from '../theme'
-import { dash, money, money2, number, percent, isReportedUnitRow } from '../../utils/formatters'
+import { dash, isMissing, money, money2, number, percent, isReportedUnitRow } from '../../utils/formatters'
 
 const s = StyleSheet.create({
   page: {
@@ -27,13 +27,13 @@ function Cell({ children, header, bold, first }) {
   return <Text style={[header ? s.th : s.td, first ? s.c0 : s.c, bold ? s.bold : null]}>{children}</Text>
 }
 
-export default function IncomeAnalysisPage({ model }) {
+export default function IncomeAnalysisPage({ model, section = '02' }) {
   const rows = (model.incomeByUnitType || []).filter(isReportedUnitRow)
   const recent = model.recentIncome
-  const cards = (recent?.rows || []).filter((row) => row.type !== 'Total')
+  const cards = (recent?.rows || []).filter((row) => row.type !== 'Total' && !isMissing(row.currentAvgPcm))
   return (
     <Page size={PAGE.size} orientation={PAGE.orientation} style={s.page}>
-      <ReportHeader section="04  Income analysis" title="Unit mix — current passing rent" />
+      <ReportHeader section={`${section}  Income analysis`} title="Unit mix — current passing rent" />
       <View style={s.table}>
         <View style={s.head}>
           <Text style={s.headT}>INCOME ANALYSIS — OVERALL</Text>

@@ -28,16 +28,17 @@ const s = StyleSheet.create({
   n1: { width: '42%', textAlign: 'right' },
 })
 
-export default function MarketRentSummaryPage({ model }) {
+export default function MarketRentSummaryPage({ model, section = '03' }) {
   const rent = model.marketRent
   const types = (rent.unitTypes || []).filter(isReportedUnitRow)
+  const residential = (rent.status || []).find((row) => row.label === 'Residential total')
   return (
     <Page size={PAGE.size} orientation={PAGE.orientation} style={s.page}>
-      <ReportHeader section="06  Market rent summary" title="ERV assessment" />
+      <ReportHeader section={`${section}  Market rent summary`} title="ERV assessment" />
       <KpiRow>
         <Kpi dark label="Gross ERV" value={money(rent.grossErv, { compact: true })} sub={`${money2(rent.grossErvPerSqFt)} per sq ft`} />
-        <Kpi label="Gross reversion" value={money(rent.reversionAmount, { compact: true })} sub={percent(rent.reversion, 2)} />
-        <Kpi label="Net market rent" value={money(rent.netErv, { compact: true })} sub="after lifecycle allowance" />
+        <Kpi label="Gross reversion" value={percent(rent.reversion, 2)} sub={money(rent.reversionAmount, { compact: true })} />
+        <Kpi label="Net ERV" value={money(rent.netErv, { compact: true })} sub="after lifecycle allowance" />
         <Kpi label="Leakage" value={percent(rent.leakage, 1)} sub="workbook ERV leakage" />
       </KpiRow>
       <View style={s.split}>
@@ -50,7 +51,7 @@ export default function MarketRentSummaryPage({ model }) {
             <Text style={[s.th, s.c]}>Units</Text>
             <Text style={[s.th, s.c]}>Passing pa</Text>
             <Text style={[s.th, s.c]}>Market pa</Text>
-            <Text style={[s.th, s.c]}>Market pcm</Text>
+            <Text style={[s.th, s.c]}>Avg pcm</Text>
             <Text style={[s.th, s.c]}>Reversion</Text>
           </View>
           {types.map((row) => (
@@ -63,6 +64,16 @@ export default function MarketRentSummaryPage({ model }) {
               <Text style={[s.td, s.c]}>{percent(row.reversion, 1)}</Text>
             </View>
           ))}
+          {residential ? (
+            <View style={s.tr} wrap={false}>
+              <Text style={[s.td, s.c0, s.bold]}>{residential.label}</Text>
+              <Text style={[s.td, s.c, s.bold]}>{number(residential.units)}</Text>
+              <Text style={[s.td, s.c, s.bold]}>{money(residential.passingPa)}</Text>
+              <Text style={[s.td, s.c, s.bold]}>{money(residential.marketPa)}</Text>
+              <Text style={[s.td, s.c, s.bold]}>{money(residential.marketPcm)}</Text>
+              <Text style={[s.td, s.c, s.bold]}>{percent(residential.reversion, 1)}</Text>
+            </View>
+          ) : null}
         </View>
         <View style={[s.panel, s.right]}>
           <View style={s.head}>
