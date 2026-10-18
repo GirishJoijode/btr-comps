@@ -5,7 +5,7 @@ import { valuationReportMeta } from './meta'
 import { parseOliveArrayBuffer } from './parser/parseOliveWorkbook'
 import { rejectUpload } from './validation/uploadRules'
 import { money, number, sqft } from './utils/formatters'
-import { buildPdfFilename } from './utils/filename'
+import { buildPdfFilename, buildPptxFilename } from './utils/filename'
 import './styles/module.css'
 
 const ACCEPT = '.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -34,7 +34,7 @@ class ReportModuleBoundary extends Component {
             <div className="vrg-shell">
               <div className="vrg-status vrg-status--error" role="alert">
                 <h3>Generation error</h3>
-                <p>Unable to generate the PDF. Please review the workbook and try again.</p>
+                <p>Unable to generate the report. Please review the workbook and try again.</p>
                 <button type="button" className="btn btn--primary" onClick={() => this.setState({ failed: false })}>
                   Try again
                 </button>
@@ -62,37 +62,51 @@ function ValuationReportGeneratorInner({
   logoutControl,
 }) {
   const inputRef = useRef(null)
-  const objectUrlRef = useRef(null)
+  const pptxUrlRef = useRef(null)
+  const pdfUrlRef = useRef(null)
+  const failedOutputRef = useRef('pptx')
   const [dragOver, setDragOver] = useState(false)
   const [phase, setPhase] = useState('idle')
+  const [outputKind, setOutputKind] = useState('pptx')
   const [message, setMessage] = useState('')
+  const [exportError, setExportError] = useState('')
   const [warnings, setWarnings] = useState([])
   const [model, setModel] = useState(null)
   const [sheets, setSheets] = useState([])
   const [checks, setChecks] = useState([])
   const [details, setDetails] = useState([])
-  const [download, setDownload] = useState(null)
+  const [pptxFile, setPptxFile] = useState(null)
+  const [pdfFile, setPdfFile] = useState(null)
 
-  const clearObjectUrl = () => {
-    if (objectUrlRef.current) {
-      URL.revokeObjectURL(objectUrlRef.current)
-      objectUrlRef.current = null
+  const releaseUrl = (ref) => {
+    if (ref.current) {
+      URL.revokeObjectURL(ref.current)
+      ref.current = null
     }
   }
 
   const resetSession = () => {
-    clearObjectUrl()
-    setDownload(null)
+    releaseUrl(pptxUrlRef)
+    releaseUrl(pdfUrlRef)
+    setPptxFile(null)
+    setPdfFile(null)
     setModel(null)
     setSheets([])
     setChecks([])
     setWarnings([])
     setDetails([])
     setMessage('')
+    setExportError('')
     setPhase('idle')
   }
 
-  useEffect(() => () => clearObjectUrl(), [])
+  useEffect(
+    () => () => {
+      releaseUrl(pptxUrlRef)
+      releaseUrl(pdfUrlRef)
+    },
+    [],
+  )
 
   const handleFile = useCallback(async (file) => {
     if (!file) return
@@ -135,25 +149,70 @@ function ValuationReportGeneratorInner({
     }
   }, [])
 
-  const generate = async () => {
+  const startDownload = (url, name) => {
+    const link = document.createElement('a')
+    link.href = url
+    link.download = name
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+  }
+
+  const generatePptx = async () => {
     if (!model) return
+    failedOutputRef.current = 'pptx'
     try {
+      setOutputKind('pptx')
       setPhase('generating')
-      setMessage('')
+      setExportError('')
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      const { generateValuationPptxBlob } = await import('./pptx/generatePptx.js')
+      const blob = await generateValuationPptxBlob(model)
+      releaseUrl(pptxUrlRef)
+      const url = URL.createObjectURL(blob)
+      pptxUrlRef.current = url
+      const file = { url, name: buildPptxFilename(model) }
+      setPptxFile(file)
+      setPhase('ready')
+      startDownload(url, file.name)
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.warn('[valuation-report] powerpoint generation failed', error?.name || 'Error')
+      }
+      setPhase('ready')
+      setExportError('Unable to generate the PowerPoint. Please review the workbook and try again.')
+    }
+  }
+
+  const generatePdf = async () => {
+    if (!model) return
+    failedOutputRef.current = 'pdf'
+    try {
+      setOutputKind('pdf')
+      setPhase('generating')
+      setExportError('')
+      await new Promise((resolve) => setTimeout(resolve, 0))
       const { generateValuationPdfBlob } = await import('./pdf/generatePdf.js')
       const blob = await generateValuationPdfBlob(model)
-      clearObjectUrl()
+      releaseUrl(pdfUrlRef)
       const url = URL.createObjectURL(blob)
-      objectUrlRef.current = url
-      setDownload({ url, name: buildPdfFilename(model) })
-      setPhase('generated')
+      pdfUrlRef.current = url
+      const file = { url, name: buildPdfFilename(model) }
+      setPdfFile(file)
+      setPhase('ready')
+      startDownload(url, file.name)
     } catch (error) {
       if (import.meta.env.DEV) {
         console.warn('[valuation-report] pdf generation failed', error?.name || 'Error')
       }
-      setPhase('error')
-      setMessage('Unable to generate the PDF. Please review the workbook and try again.')
+      setPhase('ready')
+      setExportError('Unable to generate the PDF. Please review the workbook and try again.')
     }
+  }
+
+  const retryExport = () => {
+    if (failedOutputRef.current === 'pdf') generatePdf()
+    else generatePptx()
   }
 
   const onDrop = (event) => {
@@ -164,7 +223,7 @@ function ValuationReportGeneratorInner({
   }
 
   const busy = phase === 'reading' || phase === 'validating' || phase === 'generating'
-  const showSummary = model && (phase === 'ready' || phase === 'generating' || phase === 'generated' || phase === 'error')
+  const showSummary = model && (phase === 'ready' || phase === 'generating')
 
   return (
     <div className="app vrg-app">
@@ -188,8 +247,9 @@ function ValuationReportGeneratorInner({
           <div className="vrg-intro">
             <h2>BTR Valuation Report Generator</h2>
             <p>
-              Generate valuation summary reports from OLIVE exports. The workbook is read and
-              converted to PDF entirely in your browser — nothing is uploaded.
+              Generate an editable PowerPoint valuation summary from an OLIVE export. The workbook
+              is read in your browser and nothing is uploaded. A PDF of the same report is available
+              as an optional download.
             </p>
           </div>
 
@@ -227,7 +287,9 @@ function ValuationReportGeneratorInner({
               <Loading
                 message={
                   phase === 'generating'
-                    ? 'Generating report...'
+                    ? outputKind === 'pdf'
+                      ? 'Preparing PDF...'
+                      : 'Preparing PowerPoint...'
                     : phase === 'validating'
                       ? 'Validating workbook…'
                       : 'Reading workbook…'
@@ -236,9 +298,9 @@ function ValuationReportGeneratorInner({
             </div>
           ) : null}
 
-          {(phase === 'invalid' || phase === 'error') && message ? (
+          {phase === 'invalid' && message ? (
             <div className="vrg-status vrg-status--error" role="alert">
-              <h3>{phase === 'invalid' ? 'Invalid workbook' : 'Generation error'}</h3>
+              <h3>Invalid workbook</h3>
               <p>{message}</p>
               {details.length > 0 ? (
                 <ul>
@@ -247,11 +309,16 @@ function ValuationReportGeneratorInner({
                   ))}
                 </ul>
               ) : null}
-              {phase === 'error' ? (
-                <button type="button" className="btn btn--primary" onClick={generate}>
-                  Try again
-                </button>
-              ) : null}
+            </div>
+          ) : null}
+
+          {exportError ? (
+            <div className="vrg-status vrg-status--error" role="alert">
+              <h3>Generation error</h3>
+              <p>{exportError}</p>
+              <button type="button" className="btn btn--primary" onClick={retryExport}>
+                Try again
+              </button>
             </div>
           ) : null}
 
@@ -276,21 +343,36 @@ function ValuationReportGeneratorInner({
                 <SummaryCard label="Area" value={sqft(model.property.areaSqFt)} />
                 <SummaryCard label="Market value" value={money(model.valuation.marketValue)} />
               </div>
+              <p className="vrg-output__label">Primary output · PowerPoint (.pptx)</p>
               <div className="vrg-actions">
                 <button
                   type="button"
-                  className="btn btn--primary"
-                  onClick={generate}
-                  disabled={phase === 'generating'}
+                  className="btn btn--primary vrg-btn-pptx"
+                  onClick={generatePptx}
+                  disabled={busy}
                 >
-                  {phase === 'generated' ? 'Regenerate PDF' : 'Generate PDF'}
+                  {pptxFile ? 'Regenerate PowerPoint' : 'Generate PowerPoint'}
                 </button>
-                {download && (
-                  <a className="btn btn--ghost" href={download.url} download={download.name}>
+                {pptxFile ? (
+                  <a className="btn btn--primary vrg-btn-pptx" href={pptxFile.url} download={pptxFile.name}>
+                    Download PowerPoint
+                  </a>
+                ) : null}
+                {pdfFile ? (
+                  <a className="btn btn--ghost vrg-btn-pdf" href={pdfFile.url} download={pdfFile.name}>
                     Download PDF
                   </a>
+                ) : (
+                  <button type="button" className="btn btn--ghost vrg-btn-pdf" onClick={generatePdf} disabled={busy}>
+                    Download PDF
+                  </button>
                 )}
-                <button type="button" className="btn btn--ghost" onClick={() => inputRef.current?.click()}>
+                {pdfFile ? (
+                  <button type="button" className="btn btn--ghost vrg-btn-pdf" onClick={generatePdf} disabled={busy}>
+                    Regenerate PDF
+                  </button>
+                ) : null}
+                <button type="button" className="btn btn--ghost" onClick={() => inputRef.current?.click()} disabled={busy}>
                   Replace workbook
                 </button>
               </div>

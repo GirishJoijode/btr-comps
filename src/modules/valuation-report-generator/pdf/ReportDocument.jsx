@@ -1,6 +1,6 @@
 import { Document } from '@react-pdf/renderer'
 import SectionDividerPage from './components/SectionDivider'
-import { reportPlan } from './outline'
+import { buildReportSpec } from '../report/spec'
 import CashflowPage from './pages/CashflowPage'
 import ContentsPage from './pages/ContentsPage'
 import CoverPage from './pages/CoverPage'
@@ -18,7 +18,8 @@ import RunningCostsMarketPage from './pages/RunningCostsMarketPage'
 import ValuationReturnsPage from './pages/ValuationReturnsPage'
 
 export default function ReportDocument({ model }) {
-  const plan = reportPlan(model)
+  const spec = buildReportSpec(model)
+  const plan = { sections: spec.sections, pages: spec.slides }
   const furtherSection = plan.sections.find((item) => item.key === 'further')?.number || null
   return (
     <Document
